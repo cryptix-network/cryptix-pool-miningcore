@@ -32,7 +32,7 @@ Code contributions are very welcome and should be submitted as standard [pull re
 ## Building on Debian/Ubuntu
 
 ```console
-git clone https://github.com/blackmennewstyle/miningcore
+git clone https://github.com/cryptix-network/cryptix-pool-miningcore
 cd miningcore
 ```
 
@@ -77,7 +77,7 @@ build-windows.bat
 In case you don't want to install any dependencies then you can build the app using the official Microsoft .NET SDK Docker image.
 
 ```console
-git clone https://github.com/blackmennewstyle/miningcore
+git clone https://github.com/cryptix-network/cryptix-pool-miningcore
 cd miningcore
 ```
 Then build using Docker:
@@ -197,25 +197,6 @@ Miningcore -c config.json
 
 Refer to [this file](https://github.com/blackmennewstyle/miningcore/blob/master/src/Miningcore/coins.json) for a complete list.
 
-## Caveats
-
-### Monero
-
-- Monero's Wallet Daemon (monero-wallet-rpc) relies on HTTP digest authentication for authentication which is currently not supported by Miningcore. Therefore monero-wallet-rpc must be run with the `--disable-rpc-login` option. It is advisable to mitigate the resulting security risk by putting monero-wallet-rpc behind a reverse proxy like nginx with basic-authentication.
-- Miningcore utilizes RandomX's light-mode by default which consumes only **256 MB of memory per RandomX-VM**. A modern (2021) era CPU will be able to handle ~ 50 shares per second in this mode.
-- If you are running into throughput problems on your pool you can either increase the number of RandomX virtual machines in light-mode by adding `"randomXVmCount": x` to your pool configuration where x is at maximum equal to the machine's number of processor cores. Alternatively you can activate fast-mode by adding `"randomXFlagsAdd": "RANDOMX_FLAG_FULL_MEM"` to the pool configuration. Fast mode increases performance by 10x but requires roughly **3 GB of RAM per RandomX-VM**.
-
-### ZCash
-
-- Pools needs to be configured with both a t-addr and z-addr (new configuration property "z-address" of the pool configuration element)
-- First configured zcashd daemon needs to control both the t-addr and the z-addr (have the private key)
-- To increase the share processing throughput it is advisable to increase the maximum number of concurrent equihash solvers through the new configuration property "equihashMaxThreads" of the cluster configuration element. Increasing this value by one increases the peak memory consumption of the pool cluster by 1 GB.
-- Miners may use both t-addresses and z-addresses when connecting to the pool
-
-### Vertcoin
-
-- Be sure to copy the file `verthash.dat` from your vertcoin blockchain folder to your Miningcore server
-- In your Miningcore config file add this property to your vertcoin pool configuration: `"vertHashDataFile": "/path/to/verthash.dat",`
 
 ## API
 
@@ -228,6 +209,8 @@ A public production pool requires a web-frontend for your users to check their h
 Once again, do not run a production pool on Windows! This is not a supported configuration.
 
 ## Donations
+* Cryptix:  `cryptix:qrjefk2r8wp607rmyvxmgjansqcwugjazpu2kk2r7057gltxetdvk8gl9fs0w`
+
 
 To support this project you can become a [sponsor]( https://github.com/sponsors//blackmennewstyle ) or send a donation to the following accounts:
 
