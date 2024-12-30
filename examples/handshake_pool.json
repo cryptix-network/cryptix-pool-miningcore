@@ -1,0 +1,123 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "apiLogFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "Integrated",
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": false,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "api": {
+        "enabled": true,
+        "listenAddress": "*",
+        "port": 4000,
+        "metricsIpWhitelist": [],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": [
+                ""
+            ]
+        }
+    },
+    "pools": [{
+        "id": "hns1",
+        "enabled": true,
+        "coin": "handshake",
+        "address": "ts1qj633ftn403c8zm365kq6qhr60vzdx8qyk92ee4",
+        "pubKey": "0370ce96be2fc2288d308a9f9ca233efa830a1b8a5cee9a26bcc4de6a4c0892687",
+        "rewardRecipients": [
+            {
+                "type": "op",
+                "address": "ts1qj633ftn403c8zm365kq6qhr60vzdx8qyk92ee4",
+                "percentage": 1
+            }
+        ],
+        "blockRefreshInterval": 250,
+        "jobRebroadcastTimeout": 0,
+        "clientConnectionTimeout": 600,
+        "maxActiveJobs": 1,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3094": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 4
+            },
+            "3095": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 256
+            }
+        },
+        "daemons": [
+            {
+                "host": "127.0.0.1",
+                "port": 12037,
+                "user": null,
+                "password": null
+            },
+            {
+                "host": "127.0.0.1",
+                "port": 12039,
+                "user": null,
+                "password": null,
+                "category": "wallet"
+            }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "walletAccount": "<The Handshake Node's wallet account which owns the pool address>",
+            "minimumPayment": 1,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 0.5
+            }
+        }
+    }]
+}

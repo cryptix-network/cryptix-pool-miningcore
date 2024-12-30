@@ -1,0 +1,3 @@
+cryptixwallet.exe create
+
+pause

@@ -1,0 +1,149 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <OutputType>Exe</OutputType>
+        <TargetFramework>net6.0</TargetFramework>
+        <AssemblyName>Miningcore</AssemblyName>
+        <RootNamespace>Miningcore</RootNamespace>
+        <ServerGarbageCollection>true</ServerGarbageCollection>
+        <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+        <ImplicitUsings>true</ImplicitUsings>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>
+        <IsLinux Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">true</IsLinux>
+        <IsOSX Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::OSX)))' == 'true'">true</IsOSX>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+            <_Parameter1>$(AssemblyName).Tests</_Parameter1>
+        </AssemblyAttribute>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="Api\Notifications\**" />
+        <Compile Remove="Blockchain\Bitcoin\Transactions\**" />
+        <Compile Remove="DataAccess\**" />
+        <Compile Remove="Maintenance\**" />
+        <EmbeddedResource Remove="Api\Notifications\**" />
+        <EmbeddedResource Remove="Blockchain\Bitcoin\Transactions\**" />
+        <EmbeddedResource Remove="DataAccess\**" />
+        <EmbeddedResource Remove="Maintenance\**" />
+        <None Remove="Api\Notifications\**" />
+        <None Remove="Blockchain\Bitcoin\Transactions\**" />
+        <None Remove="DataAccess\**" />
+        <None Remove="Maintenance\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Remove="config2.json" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="AspNetCoreRateLimit" Version="5.0.0" />
+        <PackageReference Include="Autofac" Version="8.0.0" />
+        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="8.0.0" />
+        <PackageReference Include="CircularBuffer" Version="1.3.0" />
+        <PackageReference Include="GitVersion.MsBuild" Version="5.12.0">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.IO.RecyclableMemoryStream" Version="3.0.0" />
+        <PackageReference Include="Newtonsoft.Json.Schema" Version="3.0.15" />
+        <PackageReference Include="Npgsql" Version="8.0.3" />
+        <PackageReference Include="NSwag.AspNetCore" Version="14.0.2" />
+        <PackageReference Include="NSwag.CodeGeneration.CSharp" Version="14.0.2" />
+        <PackageReference Include="NSwag.MSBuild" Version="14.0.2">
+            <PrivateAssets>all</PrivateAssets>
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="NLog.Extensions.Hosting" Version="5.3.8" />
+        <PackageReference Include="AutoMapper" Version="12.0.1" />
+        <PackageReference Include="Dapper" Version="2.1.15" />
+        <PackageReference Include="FluentValidation" Version="11.9.0" />
+        <PackageReference Include="FluentValidation.AspNetCore" Version="11.3.0" />
+        <PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="11.5.1" />
+        <PackageReference Include="JetBrains.Annotations" Version="2023.3.0" />
+        <PackageReference Include="MailKit" Version="3.5.0" />
+        <PackageReference Include="McMaster.Extensions.CommandLineUtils" Version="4.0.2" />
+        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="8.0.1" />
+        <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+        <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />
+        <PackageReference Include="NBitcoin" Version="7.0.36" />
+        <PackageReference Include="NBitcoin.Altcoins" Version="3.0.21" />
+        <PackageReference Include="NBitcoin.Zcash" Version="3.0.0" />
+        <PackageReference Include="NBitcoin.Secp256k1" Version="3.1.4" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+        <PackageReference Include="NLog" Version="5.2.8" />
+        <PackageReference Include="NLog.Extensions.Logging" Version="5.3.8" />
+        <PackageReference Include="Polly" Version="8.3.1" />
+        <PackageReference Include="Portable.BouncyCastle" Version="1.9.0" />
+        <PackageReference Include="prometheus-net.AspNetCore" Version="8.1.0" />
+        <PackageReference Include="prometheus-net" Version="8.2.0" />
+        <PackageReference Include="protobuf-net" Version="3.2.30" />
+        <PackageReference Include="System.Diagnostics.Process" Version="4.3.0" />
+        <PackageReference Include="System.Reactive" Version="6.0.0" />
+        <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
+        <PackageReference Include="Google.Protobuf" Version="3.26.1" />
+        <PackageReference Include="Grpc.Net.Client" Version="2.62.0" />
+        <PackageReference Include="Grpc.Tools" Version="2.62.0">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <Reference Include="WebSocketManager">
+            <HintPath>..\..\libs\WebSocketManager.dll</HintPath>
+        </Reference>
+        <Reference Include="WebSocketManager.Common">
+            <HintPath>..\..\libs\WebSocketManager.Common.dll</HintPath>
+        </Reference>
+        <Reference Include="ZeroMQ">
+            <HintPath>..\..\libs\ZeroMQ.dll</HintPath>
+        </Reference>
+    </ItemGroup>
+
+    <ItemGroup>
+        <None Update="coins.json">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+
+    <!-- Reference pre-built library binaries on Windows  -->
+    <ItemGroup Condition="'$(IsWindows)' == 'true'">
+        <NativeLibs Include="$(ProjectDir)..\..\libs\runtimes\win-x64\*.dll" />
+        <None Include="@(NativeLibs)" Visible="False">
+            <Link>%(RecursiveDir)%(FileName)%(Extension)</Link>
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+    <ItemGroup>
+      <None Remove="schema.json" />
+      <Content Include="config.schema.json">
+        <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      </Content>
+    </ItemGroup>
+
+    <!-- Build library binaries from source on Linux -->
+    <Target Name="BuildNativeLibsLinux" AfterTargets="AfterBuild" Condition="'$(IsLinux)' == 'true'">
+        <Exec Command="(cd $(ProjectDir) &amp;&amp; sh build-libs-linux.sh $(OutDir))" />
+    </Target>
+
+    <!-- Include library binaries in publish on Windows -->
+    <Target Name="NativeLibsPublishIncludeWin" BeforeTargets="PrepareForPublish" Condition="'$(IsWindows)' == 'true'">
+        <ItemGroup>
+            <Libs Include="$(ProjectDir)..\..\libs\runtimes\win-x64\*.dll" />
+            <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
+
+    <!-- Include library binaries in publish on Linux -->
+    <Target Name="NativeLibsPublishIncludeLinux" BeforeTargets="PrepareForPublish" Condition="'$(IsLinux)' == 'true'">
+        <ItemGroup>
+            <Libs Include="$(OutDir)*.so" />
+            <ContentWithTargetPath Include="@(Libs->'%(FullPath)')" RelativePath="%(Libs.Identity)" TargetPath="%(Libs.Filename)%(Libs.Extension)" CopyToPublishDirectory="PreserveNewest" />
+        </ItemGroup>
+    </Target>
+</Project>

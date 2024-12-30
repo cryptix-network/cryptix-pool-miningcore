@@ -1,0 +1,144 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "apiLogFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "Integrated",
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": false,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "api": {
+        "enabled": true,
+        "listenAddress": "*",
+        "port": 4000,
+        "metricsIpWhitelist": [],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": [
+                ""
+            ]
+        }
+    },
+    "pools": [{
+        "id": "vrsc1",
+        "enabled": true,
+        "coin": "veruscoin",
+        "address": "RHux2fYMyxMG4W5F2Va436cANsR47JUvTE",
+        "GBTArgs": [{
+            "capabilities": [
+                "coinbasetxn", 
+                "workid",
+                "coinbase/append"
+            ],
+            "rules": [
+                "segwit"
+            ]
+        }],
+        "rewardRecipients": [
+            {
+                "type": "op",
+                "address": "RHux2fYMyxMG4W5F2Va436cANsR47JUvTE",
+                "percentage": 1.5
+            }
+        ],
+        "blockRefreshInterval": 0,
+        "jobRebroadcastTimeout": 0,
+        "clientConnectionTimeout": 2400,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3092": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 25600000,
+                "varDiff": {
+                    "minDiff": 25600000,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30,
+                    "maxDelta": 512
+                }
+            },
+            "3093": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 25600000,
+                "tls": true,
+                "tlsPfxFile": "<Your directory for the pfx file>",
+                "tlsPfxPassword": "password",
+                "varDiff": {
+                    "minDiff": 25600000,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30,
+                    "maxDelta": 512
+                }
+            }
+        },
+        "daemons": [
+            {
+                "host": "127.0.0.1",
+                "port": 7771,
+                "user": "user",
+                "password": "pass",
+                "zmqBlockNotifySocket": "tcp://127.0.0.1:7772",
+                "zmqBlockNotifyTopic": "hashblock"
+            }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "minimumPayment": 1,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 0.5
+            }
+        }
+    }]
+}

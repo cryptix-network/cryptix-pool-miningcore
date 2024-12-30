@@ -1,0 +1,147 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "apiLogFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "Integrated",
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": false,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "api": {
+        "enabled": true,
+        "listenAddress": "*",
+        "port": 4000,
+        "metricsIpWhitelist": [],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": [
+                ""
+            ]
+        }
+    },
+    "pools": [{
+        "id": "alph1",
+        "enabled": true,
+        "coin": "alephium",
+        "address": "aFkp9i2yxNyRW17uX4XLDStnPoguwJ6tuL",
+        "rewardRecipients": [
+            {
+                "type": "op",
+                "address": "aFkp9i2yxNyRW17uX4XLDStnPoguwJ6tuL",
+                "percentage": 1
+            }
+        ],
+        "clientConnectionTimeout": 600,
+        "socketJobMessageBufferSize": 16384,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50
+        },
+        "ports": {
+            "3094": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 4,
+                "varDiff": {
+                    "minDiff": 2,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 100,
+                    "maxDelta": 512
+                }
+            },
+            "3095": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 4,
+                "tls": true,
+                "tlsPfxFile": "<Your directory for the pfx file>",
+                "tlsPfxPassword": "password",
+                "varDiff": {
+                    "minDiff": 2,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 100,
+                    "maxDelta": 512
+                }
+            },
+            "3096": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 256,
+                "varDiff": {
+                    "minDiff": 256,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 30,
+                    "maxDelta": 2048
+                }
+            }
+        },
+        "daemons": [
+            {
+                "host": "127.0.0.1",
+                "port": 12973,
+                "user": null,
+                "password": null,
+                "apiKey": "<The Alephium Node's API key in clear-text - not the hash>",
+                "minerApiPort": 10973
+            }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "walletName": "<The Alephium Node's wallet which owns the pool address>",
+            "walletPassword": "<The Alephium Node's wallet password which owns the pool address>",
+            "minimumPayment": 1,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 0.5
+            }
+        }
+    }]
+}

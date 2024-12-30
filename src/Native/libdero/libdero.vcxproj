@@ -1,0 +1,278 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>15.0</VCProjectVersion>
+    <ProjectGuid>{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}</ProjectGuid>
+    <Keyword>Win32Proj</Keyword>
+    <RootNamespace>netmultihashnative</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+    <ProjectName>libdero</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(ProjectDir)..\libmultihash\windows\include\libsodium;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib32-msvc-14.0;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(ProjectDir)..\libmultihash\windows\include\libsodium;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0;$(ProjectDir)..\libmultihash\windows\lib\x64;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(ProjectDir)..\libmultihash\windows\include\libsodium;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib32-msvc-14.0;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)\..\..\..\..\boost_1_62_0;$(ProjectDir)..\libmultihash\windows\include\libsodium;$(ProjectDir)..\libmultihash\windows\include\libsodium;$(IncludePath);$(ProjectDir)</IncludePath>
+    <LibraryPath>$(SolutionDir)\..\..\..\..\boost_1_62_0\lib64-msvc-14.0;$(LibraryPath)</LibraryPath>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS;HAVE_SSE2</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;$(ProjectDir)..\libmultihash\windows\lib\x86\libsodium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS;HAVE_SSE2</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;$(ProjectDir)..\libmultihash\windows\lib\x64\libsodium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS;HAVE_SSE2</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;$(ProjectDir)..\libmultihash\windows\lib\x86\libsodium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>
+      </PrecompiledHeader>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>SODIUM_STATIC;_CRT_SECURE_NO_WARNINGS;HAVE_SSE2</PreprocessorDefinitions>
+      <SDLCheck>true</SDLCheck>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>Ws2_32.lib;$(ProjectDir)..\libmultihash\windows\lib\x64\libsodium.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="include\highwayhash\arch_specific.h" />
+    <ClInclude Include="include\highwayhash\compiler_specific.h" />
+    <ClInclude Include="include\highwayhash\hh_avx2.h" />
+    <ClInclude Include="include\highwayhash\hh_portable.h" />
+    <ClInclude Include="include\highwayhash\hh_sse41.h" />
+    <ClInclude Include="include\highwayhash\hh_types.h" />
+    <ClInclude Include="include\highwayhash\highwayhash_target.h" />
+    <ClInclude Include="include\highwayhash\highwayhash_test_target.h" />
+    <ClInclude Include="include\highwayhash\instruction_sets.h" />
+    <ClInclude Include="include\highwayhash\nanobenchmark.h" />
+    <ClInclude Include="include\highwayhash\os_specific.h" />
+    <ClInclude Include="include\highwayhash\targets.h" />
+    <ClInclude Include="include\highwayhash\tsc_timer.h" />
+    <ClInclude Include="include\highwayhash\vector128.h" />
+    <ClInclude Include="include\highwayhash\vector256.h" />
+    <ClInclude Include="include\libkeccak\common.h" />
+    <ClInclude Include="include\libkeccak\libkeccak-legacy.h" />
+    <ClInclude Include="include\libkeccak\libkeccak.h" />
+    <ClInclude Include="include\libsais\libsais.h" />
+    <ClInclude Include="include\endian.hpp" />
+    <ClInclude Include="include\Salsa20.h" />
+    <ClInclude Include="include\Salsa20.inl" />
+    <ClInclude Include="include\fnv1a.h" />
+    <ClInclude Include="include\int-util.h" />
+    <ClInclude Include="include\lookup.h" />
+    <ClInclude Include="include\xxhash64.h" />
+    <ClInclude Include="astro_aarch64.hpp" />
+    <ClInclude Include="astrobwtv3.h" />
+    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="stdint.h" />
+    <ClInclude Include="targetver.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="include\highwayhash\arch_specific.cc" />
+    <ClCompile Include="include\highwayhash\hh_avx2.cc">
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="include\highwayhash\hh_portable.cc" />
+    <ClCompile Include="include\highwayhash\hh_sse41.cc" />
+    <ClCompile Include="include\highwayhash\highwayhash_target.cc">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="include\highwayhash\instruction_sets.cc" />
+    <ClCompile Include="include\highwayhash\os_specific.cc" />
+    <ClCompile Include="include\libkeccak\digest.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_behex_lower.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_behex_upper.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_cshake_initialise.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_cshake_suffix.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_degeneralise_spec.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_generalised_spec_initialise.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_generalised_sum_fd.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_copy.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_create.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_destroy.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_digest.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_duplicate.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_fast_destroy.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_fast_digest.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_fast_free.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_fast_update.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_free.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_initialise.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_marshal.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_reset.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_set_key.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_unmarshal.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_update.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_hmac_wipe.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_keccaksum_fd.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_rawshakesum_fd.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_sha3sum_fd.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_shakesum_fd.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_spec_check.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_spec_rawshake.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_spec_sha3.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_copy.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_create.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_destroy.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_duplicate.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_fast_destroy.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_fast_free.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_free.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_initialise.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_marshal.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_reset.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_unmarshal.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_wipe.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_wipe_message.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_state_wipe_sponge.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_unhex.c" />
+    <ClCompile Include="include\libkeccak\libkeccak_zerocopy_chunksize.c" />
+    <ClCompile Include="include\libsais\libsais.c" />
+    <ClCompile Include="astro_aarch64.cpp" />
+    <ClCompile Include="astrobwtv3.cpp" />
+    <ClCompile Include="dllmain.cpp" />
+    <ClCompile Include="exports.cpp" />
+    <ClCompile Include="stdafx.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

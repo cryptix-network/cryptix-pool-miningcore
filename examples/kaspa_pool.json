@@ -1,0 +1,143 @@
+﻿{
+    "logging": {
+        "level": "info",
+        "enableConsoleLog": true,
+        "enableConsoleColors": true,
+        "logFile": "",
+        "apiLogFile": "",
+        "logBaseDirectory": "",
+        "perPoolLogFile": false
+    },
+    "banning": {
+        "manager": "Integrated",
+        "banOnJunkReceive": true,
+        "banOnInvalidShares": false
+    },
+    "notifications": {
+        "enabled": false,
+        "email": {
+            "host": "smtp.example.com",
+            "port": 587,
+            "user": "user",
+            "password": "password",
+            "fromAddress": "info@yourpool.org",
+            "fromName": "support"
+        },
+        "admin": {
+            "enabled": false,
+            "emailAddress": "user@example.com",
+            "notifyBlockFound": true
+        }
+    },
+    "persistence": {
+        "postgres": {
+            "host": "127.0.0.1",
+            "port": 5432,
+            "user": "miningcore",
+            "password": "password",
+            "database": "miningcore"
+        }
+    },
+    "paymentProcessing": {
+        "enabled": true,
+        "interval": 600,
+        "shareRecoveryFile": "recovered-shares.txt"
+    },
+    "api": {
+        "enabled": true,
+        "listenAddress": "*",
+        "port": 4000,
+        "metricsIpWhitelist": [],
+        "rateLimiting": {
+            "disabled": true,
+            "rules": [
+                {
+                    "Endpoint": "*",
+                    "Period": "1s",
+                    "Limit": 5
+                }
+            ],
+            "ipWhitelist": [
+                ""
+            ]
+        }
+    },
+    "pools": [{
+        "id": "kas1",
+        "enabled": true,
+        "coin": "kaspa",
+        "address": "kaspa:qpee454h906cyt6pqr5gfegpxx7xjqp79dtwcqz8t698ugulhq8fxg56uaxm9",
+        "rewardRecipients": [
+            {
+                "type": "op",
+                "address": "kaspa:qpee454h906cyt6pqr5gfegpxx7xjqp79dtwcqz8t698ugulhq8fxg56uaxm9",
+                "percentage": 1
+            }
+        ],
+        "protobufWalletRpcServiceName": "kaspawalletd.kaspawalletd",
+        "clientConnectionTimeout": 600,
+        "banning": {
+            "enabled": true,
+            "time": 600,
+            "invalidPercent": 50,
+            "checkThreshold": 50,
+            "minerEffortPercent": 0.00000000465661287,
+            "minerEffortTime": 259200
+        },
+        "ports": {
+            "3094": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 4,
+                "varDiff": {
+                    "minDiff": 2,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 100,
+                    "maxDelta": 512
+                }
+            },
+            "3095": {
+                "listenAddress": "0.0.0.0",
+                "difficulty": 4,
+                "tls": true,
+                "tlsPfxFile": "<Your directory for the pfx file>",
+                "tlsPfxPassword": "password",
+                "varDiff": {
+                    "minDiff": 2,
+                    "maxDiff": null,
+                    "targetTime": 15,
+                    "retargetTime": 90,
+                    "variancePercent": 100,
+                    "maxDelta": 512
+                }
+            }
+        },
+        "daemons": [
+            {
+                "host": "127.0.0.1",
+                "port": 16110,
+                "user": null,
+                "password": null
+            },
+            {
+                "host": "127.0.0.1",
+                "port": 8082,
+                "user": null,
+                "password": null,
+                "category": "wallet"
+            }
+        ],
+        "paymentProcessing": {
+            "enabled": true,
+            "walletPassword": "<The Kaspa's wallet password which owns the pool address>",
+            "minimumPayment": 1,
+            "versionEnablingMaxFee": "v0.12.18-rc5",
+            "maxFee": 200000,
+            "payoutScheme": "PPLNS",
+            "payoutSchemeConfig": {
+                "factor": 0.5
+            }
+        }
+    }]
+}
