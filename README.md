@@ -202,6 +202,10 @@ Refer to [this file](https://github.com/blackmennewstyle/miningcore/blob/master/
 
 Miningcore comes with an integrated REST API. Please refer to this page for instructions: https://github.com/oliverw/miningcore/wiki/API
 
+## Discord
+
+Join our discord server using the following link: [https://discord.cryptix-network.org/](https://discord.cryptix-network.org/)
+
 ## Running a production pool
 
 A public production pool requires a web-frontend for your users to check their hashrate, earnings etc. Miningcore does not include such frontend but there are several community projects that can be used as starting point.
