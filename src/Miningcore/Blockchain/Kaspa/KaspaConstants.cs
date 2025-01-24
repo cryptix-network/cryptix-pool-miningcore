@@ -62,6 +62,11 @@ public static class PyrinConstants
     public const ulong Blake3ForkHeight = 1484741;
 }
 
+public static class CryptixConstants
+{   
+    public const ulong CryptixhashForkHeight = 0;
+}
+
 public static class SpectreConstants
 {
     public const int Diff1TargetNumZero = 7;
