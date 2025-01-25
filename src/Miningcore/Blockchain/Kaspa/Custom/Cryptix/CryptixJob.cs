@@ -1,7 +1,15 @@
 using System.Text;
+using System;
+using System.Numerics;
+using Miningcore.Contracts;
 using Miningcore.Crypto;
 using Miningcore.Crypto.Hashing.Algorithms;
 using Miningcore.Extensions;
+using Miningcore.Native;
+using Miningcore.Stratum;
+using Miningcore.Util;
+using NBitcoin;
+using kaspad = Miningcore.Blockchain.Kaspa.Kaspad;
 
 namespace Miningcore.Blockchain.Kaspa.Custom.Cryptix;
 
@@ -11,7 +19,7 @@ public class CryptixJob : KaspaJob
     {
     }
 
-    public override ushort[][] GenerateMatrix(Span<byte> prePowHash)
+    protected override ushort[][] GenerateMatrix(Span<byte> prePowHash)
     {
         ushort[][] matrix = new ushort[64][];
         for (int i = 0; i < 64; i++)
@@ -55,7 +63,7 @@ public class CryptixJob : KaspaJob
         }
     }
 
-    public override int ComputeRank(ushort[][] matrix)
+    protected override int ComputeRank(ushort[][] matrix)
     {
         double Eps = 0.000000001;
         double[][] B = matrix.Select(row => row.Select(val => (double)val).ToArray()).ToArray();
@@ -93,7 +101,7 @@ public class CryptixJob : KaspaJob
         return rank;
     }
 
-    public override Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
+    protected override Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
     {
 
         ushort[][] matrix = GenerateMatrix(prePowHash);
@@ -129,7 +137,7 @@ public class CryptixJob : KaspaJob
         return (Span<byte>)res;
     }
 
-    public override Span<byte> SerializeCoinbase(Span<byte> prePowHash, long timestamp, ulong nonce)
+    protected override Span<byte> SerializeCoinbase(Span<byte> prePowHash, long timestamp, ulong nonce)
     {
         Span<byte> hashBytes = stackalloc byte[32];
         
@@ -158,7 +166,7 @@ public class CryptixJob : KaspaJob
         return finalHashBytes;
     }
 
-    public override  Span<byte> SerializeHeader(kaspad.RpcBlockHeader header, bool isPrePow = true)
+    protected override  Span<byte> SerializeHeader(kaspad.RpcBlockHeader header, bool isPrePow = true)
     {
         ulong nonce = isPrePow ? 0 : header.Nonce;
         long timestamp = isPrePow ? 0 : header.Timestamp;
