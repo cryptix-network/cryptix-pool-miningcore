@@ -1,5 +1,6 @@
-using System.Text;
 using System;
+using System.IO;
+using System.Linq;
 using System.Numerics;
 using Miningcore.Contracts;
 using Miningcore.Crypto;
@@ -15,7 +16,8 @@ namespace Miningcore.Blockchain.Kaspa.Custom.Cryptix;
 
 public class CryptixJob : KaspaJob
 {
-    public CryptixJob(IHashAlgorithm customBlockHeaderHasher, IHashAlgorithm customCoinbaseHasher, IHashAlgorithm customShareHasher) : base(customBlockHeaderHasher, customCoinbaseHasher, customShareHasher)
+    public CryptixJob(IHashAlgorithm customBlockHeaderHasher, IHashAlgorithm customCoinbaseHasher, IHashAlgorithm customShareHasher)
+        : base(customBlockHeaderHasher, customCoinbaseHasher, customShareHasher)
     {
     }
 
@@ -74,10 +76,10 @@ public class CryptixJob : KaspaJob
             int j;
             for (j = 0; j < 64; j++)
             {
-                if(!rowSelected[j] && Math.Abs(B[j][i]) > Eps)
+                if (!rowSelected[j] && Math.Abs(B[j][i]) > Eps)
                     break;
             }
-            if(j != 64)
+            if (j != 64)
             {
                 rank++;
                 rowSelected[j] = true;
@@ -88,7 +90,7 @@ public class CryptixJob : KaspaJob
                 }
                 for (int k = 0; k < 64; k++)
                 {
-                    if(k != j && Math.Abs(B[k][i]) > Eps)
+                    if (k != j && Math.Abs(B[k][i]) > Eps)
                     {
                         for (int p = i + 1; p < 64; p++)
                         {
@@ -103,17 +105,14 @@ public class CryptixJob : KaspaJob
 
     protected override Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
     {
-
         ushort[][] matrix = GenerateMatrix(prePowHash);
-
 
         ushort[] vector = new ushort[64];
         for (int i = 0; i < 32; i++)
         {
-            vector[2 * i]     = (ushort)(data[i] >> 4); 
+            vector[2 * i] = (ushort)(data[i] >> 4);
             vector[2 * i + 1] = (ushort)(data[i] & 0x0F);
         }
-
 
         ushort[] product = new ushort[64];
         for (int i = 0; i < 64; i++)
@@ -123,9 +122,8 @@ public class CryptixJob : KaspaJob
             {
                 sum += (ushort)(matrix[i][j] * vector[j]);
             }
-            product[i] = (ushort)(sum >> 10); 
+            product[i] = (ushort)(sum >> 10);
         }
-
 
         byte[] res = new byte[32];
         for (int i = 0; i < 32; i++)
@@ -133,69 +131,79 @@ public class CryptixJob : KaspaJob
             res[i] = (byte)(data[i] ^ ((byte)(product[2 * i] << 4) | (byte)product[2 * i + 1]));
         }
 
+        return res.AsSpan(); 
+    }
 
-        return (Span<byte>)res;
+    private byte[] Sha3_256Hash(Span<byte> input)
+    {
+        var sha3Hasher = new Sha3_256();
+        byte[] result = new byte[32];
+        sha3Hasher.Digest(input, result); 
+        return result;  
+    }
+
+
+    private void heavyHash(Span<byte> input, Span<byte> output)
+    {
+        using (var sha256 = System.Security.Cryptography.SHA256.Create())
+        {
+            byte[] hash = sha256.ComputeHash(input.ToArray());
+            hash.CopyTo(output);
+        }
     }
 
     protected override Span<byte> SerializeCoinbase(Span<byte> prePowHash, long timestamp, ulong nonce)
     {
-        Span<byte> hashBytes = stackalloc byte[32];
-        
+        byte[] hashBytes = new byte[32];
 
-        using(var stream = new MemoryStream())
+        using (var stream = new MemoryStream())
         {
             stream.Write(prePowHash);
-            stream.Write(BitConverter.GetBytes((ulong) timestamp));
-            stream.Write(new byte[32]); 
+            stream.Write(BitConverter.GetBytes((ulong)timestamp));
+            stream.Write(new byte[32]);
             stream.Write(BitConverter.GetBytes(nonce));
 
             coinbaseHasher.Digest(stream.ToArray(), hashBytes);
         }
 
+        byte[] sha3HashBytes = Sha3_256Hash(hashBytes);
 
-        Span<byte> sha3HashBytes = stackalloc byte[32];
-        using (var sha3Hasher = new Sha3_256())
-        {
-            sha3Hasher.Update(hashBytes);
-            sha3Hasher.Finalize(sha3HashBytes);
-        }
 
-        Span<byte> finalHashBytes = stackalloc byte[32];
+        byte[] finalHashBytes = new byte[32];
         heavyHash(sha3HashBytes, finalHashBytes);
 
-        return finalHashBytes;
+        return finalHashBytes.AsSpan();  
     }
 
-    protected override  Span<byte> SerializeHeader(kaspad.RpcBlockHeader header, bool isPrePow = true)
+    protected override Span<byte> SerializeHeader(kaspad.RpcBlockHeader header, bool isPrePow = true)
     {
         ulong nonce = isPrePow ? 0 : header.Nonce;
         long timestamp = isPrePow ? 0 : header.Timestamp;
-        Span<byte> hashBytes = stackalloc byte[32];
-        
+        byte[] hashBytes = new byte[32];
 
-        using(var stream = new MemoryStream())
+        using (var stream = new MemoryStream())
         {
-            var versionBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ushort) header.Version).ReverseInPlace() : BitConverter.GetBytes((ushort) header.Version);
+            var versionBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ushort)header.Version).ReverseInPlace() : BitConverter.GetBytes((ushort)header.Version);
             stream.Write(versionBytes);
-            var parentsBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong) header.Parents.Count).ReverseInPlace() : BitConverter.GetBytes((ulong) header.Parents.Count);
+            var parentsBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong)header.Parents.Count).ReverseInPlace() : BitConverter.GetBytes((ulong)header.Parents.Count);
             stream.Write(parentsBytes);
-            
+
             foreach (var parent in header.Parents)
             {
-                var parentHashesBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong) parent.ParentHashes.Count).ReverseInPlace() : BitConverter.GetBytes((ulong) parent.ParentHashes.Count);
+                var parentHashesBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong)parent.ParentHashes.Count).ReverseInPlace() : BitConverter.GetBytes((ulong)parent.ParentHashes.Count);
                 stream.Write(parentHashesBytes);
-                
+
                 foreach (var parentHash in parent.ParentHashes)
                 {
                     stream.Write(parentHash.HexToByteArray());
                 }
             }
-            
+
             stream.Write(header.HashMerkleRoot.HexToByteArray());
             stream.Write(header.AcceptedIdMerkleRoot.HexToByteArray());
             stream.Write(header.UtxoCommitment.HexToByteArray());
-            
-            var timestampBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong) timestamp).ReverseInPlace() : BitConverter.GetBytes((ulong) timestamp);
+
+            var timestampBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong)timestamp).ReverseInPlace() : BitConverter.GetBytes((ulong)timestamp);
             stream.Write(timestampBytes);
             var bitsBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes(header.Bits).ReverseInPlace() : BitConverter.GetBytes(header.Bits);
             stream.Write(bitsBytes);
@@ -205,23 +213,22 @@ public class CryptixJob : KaspaJob
             stream.Write(daaScoreBytes);
             var blueScoreBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes(header.BlueScore).ReverseInPlace() : BitConverter.GetBytes(header.BlueScore);
             stream.Write(blueScoreBytes);
-            
+
             var blueWork = header.BlueWork.PadLeft(header.BlueWork.Length + (header.BlueWork.Length % 2), '0');
             var blueWorkBytes = blueWork.HexToByteArray();
-            
-            var blueWorkLengthBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong) blueWorkBytes.Length).ReverseInPlace() : BitConverter.GetBytes((ulong) blueWorkBytes.Length);
+
+            var blueWorkLengthBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong)blueWorkBytes.Length).ReverseInPlace() : BitConverter.GetBytes((ulong)blueWorkBytes.Length);
             stream.Write(blueWorkLengthBytes);
             stream.Write(blueWorkBytes);
-            
+
             stream.Write(header.PruningPoint.HexToByteArray());
 
             blockHeaderHasher.Digest(stream.ToArray(), hashBytes);
         }
 
-        Span<byte> finalHashBytes = stackalloc byte[32];
+        byte[] finalHashBytes = new byte[32];
         heavyHash(hashBytes, finalHashBytes);
 
-        return finalHashBytes;
+        return finalHashBytes.AsSpan();  
     }
-    
 }
