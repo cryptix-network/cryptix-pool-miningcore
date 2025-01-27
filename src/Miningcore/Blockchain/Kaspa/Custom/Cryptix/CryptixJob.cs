@@ -86,65 +86,99 @@ public class CryptixJob : KaspaJob
         return new Span<byte>(product);
     }
 
-    protected override Span<byte> SerializeHeader(kaspad.RpcBlockHeader header, bool isPrePow = true)
+    protected virtual Span<byte> SerializeCoinbase(Span<byte> prePowHash, long timestamp, ulong nonce)
     {
-        ulong nonce = isPrePow ? 0 : header.Nonce;
-        long timestamp = isPrePow ? 0 : header.Timestamp;
         Span<byte> hashBytes = stackalloc byte[32];
         
-        using (var stream = new MemoryStream())
+        using(var stream = new MemoryStream())
         {
-            var versionBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ushort) header.Version).ReverseInPlace() : BitConverter.GetBytes((ushort) header.Version);
-            stream.Write(versionBytes);
-            var parentsBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong) header.Parents.Count).ReverseInPlace() : BitConverter.GetBytes((ulong) header.Parents.Count);
-            stream.Write(parentsBytes);
-
-            foreach (var parent in header.Parents)
+            stream.Write(prePowHash);
+            stream.Write(BitConverter.GetBytes((ulong) timestamp));
+            stream.Write(new byte[32]); 
+            stream.Write(BitConverter.GetBytes(nonce));
+            
+            
+            coinbaseHasher.Digest(stream.ToArray(), hashBytes);
+            
+            // SHA3-256 
+            using (SHA3Managed sha3 = new SHA3Managed(256))
             {
-                var parentHashesBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong) parent.ParentHashes.Count).ReverseInPlace() : BitConverter.GetBytes((ulong) parent.ParentHashes.Count);
-                stream.Write(parentHashesBytes);
-
-                foreach (var parentHash in parent.ParentHashes)
-                {
-                    stream.Write(parentHash.HexToByteArray());
-                }
+                byte[] sha3Hash = sha3.ComputeHash(hashBytes.ToArray());
+                sha3Hash.CopyTo(hashBytes); 
             }
-
-            stream.Write(header.HashMerkleRoot.HexToByteArray());
-            stream.Write(header.AcceptedIdMerkleRoot.HexToByteArray());
-            stream.Write(header.UtxoCommitment.HexToByteArray());
-
-            var timestampBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong) timestamp).ReverseInPlace() : BitConverter.GetBytes((ulong) timestamp);
-            stream.Write(timestampBytes);
-            var bitsBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes(header.Bits).ReverseInPlace() : BitConverter.GetBytes(header.Bits);
-            stream.Write(bitsBytes);
-            var nonceBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes(nonce).ReverseInPlace() : BitConverter.GetBytes(nonce);
-            stream.Write(nonceBytes);
-            var daaScoreBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes(header.DaaScore).ReverseInPlace() : BitConverter.GetBytes(header.DaaScore);
-            stream.Write(daaScoreBytes);
-            var blueScoreBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes(header.BlueScore).ReverseInPlace() : BitConverter.GetBytes(header.BlueScore);
-            stream.Write(blueScoreBytes);
-
-            var blueWork = header.BlueWork.PadLeft(header.BlueWork.Length + (header.BlueWork.Length % 2), '0');
-            var blueWorkBytes = blueWork.HexToByteArray();
-
-            var blueWorkLengthBytes = (!BitConverter.IsLittleEndian) ? BitConverter.GetBytes((ulong) blueWorkBytes.Length).ReverseInPlace() : BitConverter.GetBytes((ulong) blueWorkBytes.Length);
-            stream.Write(blueWorkLengthBytes);
-            stream.Write(blueWorkBytes);
-
-            stream.Write(header.PruningPoint.HexToByteArray());
-
-            // First Hash
-            blockHeaderHasher.Digest(stream.ToArray(), hashBytes);
-
-            // Sha3-256
-            var sha3 = new Sha3_256(); 
-            var sha3Hash = sha3.Hash(hashBytes.ToArray());  
-
-            // byte[] (sha3Hash)
-            return new Span<byte>(sha3Hash);
+            
+            return (Span<byte>) hashBytes.ToArray();
         }
     }
 
 
-}
+    protected override Share ProcessShareInternal(StratumConnection worker, string nonce)
+    {
+        var context = worker.ContextAs<KaspaWorkerContext>();
+
+        BlockTemplate.Header.Nonce = Convert.ToUInt64(nonce, 16);
+
+        var prePowHashBytes = SerializeHeader(BlockTemplate.Header, true);
+        var coinbaseRawBytes = SerializeCoinbase(prePowHashBytes, BlockTemplate.Header.Timestamp, BlockTemplate.Header.Nonce);
+
+        Span<byte> coinbaseBytes = stackalloc byte[32];
+        coinbaseHasher.Digest(coinbaseRawBytes, coinbaseBytes);
+
+        Span<byte> astroBWTv3Bytes = stackalloc byte[32];
+        astroBWTv3Hasher.Digest(coinbaseBytes, astroBWTv3Bytes);
+
+        Span<byte> hashCoinbaseBytes = stackalloc byte[32];
+        shareHasher.Digest(ComputeCoinbase(coinbaseRawBytes, astroBWTv3Bytes), hashCoinbaseBytes);
+
+        var targetHashCoinbaseBytes = new Target(new BigInteger(hashCoinbaseBytes.ToNewReverseArray(), true, true));
+        var hashCoinbaseBytesValue = targetHashCoinbaseBytes.ToUInt256();
+        //throw new StratumException(StratumError.LowDifficultyShare, $"nonce: {nonce} ||| hashCoinbaseBytes: {hashCoinbaseBytes.ToHexString()} ||| BigInteger: {targetHashCoinbaseBytes.ToBigInteger()} ||| Target: {hashCoinbaseBytesValue} - [stratum: {KaspaUtils.DifficultyToTarget(context.Difficulty)} - blockTemplate: {blockTargetValue}] ||| BigToCompact: {KaspaUtils.BigToCompact(targetHashCoinbaseBytes.ToBigInteger())} - [stratum: {KaspaUtils.BigToCompact(KaspaUtils.DifficultyToTarget(context.Difficulty))} - blockTemplate: {BlockTemplate.Header.Bits}] ||| shareDiff: {(double) new BigRational(SpectreConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier} - [stratum: {context.Difficulty} - blockTemplate: {KaspaUtils.TargetToDifficulty(KaspaUtils.CompactToBig(BlockTemplate.Header.Bits)) * (double) SpectreConstants.MinHash}]");
+
+        // calc share-diff
+        var shareDiff = (double) new BigRational(SpectreConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier;
+
+        // diff check
+        var stratumDifficulty = context.Difficulty;
+        var ratio = shareDiff / stratumDifficulty;
+
+        // check if the share meets the much harder block difficulty (block candidate)
+        var isBlockCandidate = hashCoinbaseBytesValue <= blockTargetValue;
+        //var isBlockCandidate = true;
+
+        // test if share meets at least workers current difficulty
+        if(!isBlockCandidate && ratio < 0.99)
+        {
+            // check if share matched the previous difficulty from before a vardiff retarget
+            if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+            {
+                ratio = shareDiff / context.PreviousDifficulty.Value;
+
+                if(ratio < 0.99)
+                    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+
+                // use previous difficulty
+                stratumDifficulty = context.PreviousDifficulty.Value;
+            }
+
+            else
+                throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+        }
+
+        var result = new Share
+        {
+            BlockHeight = (long) BlockTemplate.Header.DaaScore,
+            NetworkDifficulty = Difficulty,
+            Difficulty = context.Difficulty / shareMultiplier
+        };
+
+        if(isBlockCandidate)
+        {
+            var hashBytes = SerializeHeader(BlockTemplate.Header, false);
+
+            result.IsBlockCandidate = true;
+            result.BlockHash = hashBytes.ToHexString();
+        }
+
+        return result;
+    }
+
