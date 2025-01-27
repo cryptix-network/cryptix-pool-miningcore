@@ -16,12 +16,15 @@ namespace Miningcore.Blockchain.Kaspa.Custom.Cryptix;
 
 public class CryptixJob : KaspaJob
 {
+
+    protected Sha3_256 sha3_256Hasher;
+
     public CryptixJob(IHashAlgorithm customBlockHeaderHasher, IHashAlgorithm customCoinbaseHasher, IHashAlgorithm customShareHasher)
         : base(customBlockHeaderHasher, customCoinbaseHasher, customShareHasher)
     {
     }
 
-    protected override virtual Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
+    protected override Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
     {
 
         ushort[][] matrix = GenerateMatrix(prePowHash);
@@ -83,8 +86,7 @@ public class CryptixJob : KaspaJob
         return new Span<byte>(product);
     }
 
-
-    protected override virtual Span<byte> SerializeHeader(kaspad.RpcBlockHeader header, bool isPrePow = true)
+    protected override Span<byte> SerializeHeader(kaspad.RpcBlockHeader header, bool isPrePow = true)
     {
         ulong nonce = isPrePow ? 0 : header.Nonce;
         long timestamp = isPrePow ? 0 : header.Timestamp;
@@ -135,15 +137,14 @@ public class CryptixJob : KaspaJob
             // First Hash
             blockHeaderHasher.Digest(stream.ToArray(), hashBytes);
 
-            // Sha3
-            using (var sha3 = new SHA3Managed(256))
-            {
-                var sha3Hash = sha3.ComputeHash(hashBytes.ToArray());
+            // Sha3-256
+            var sha3 = new Sha3_256(); 
+            var sha3Hash = sha3.Hash(hashBytes.ToArray());  
 
-                // return
-                return (Span<byte>)sha3Hash.ToArray();
-            }
+            // byte[] (sha3Hash)
+            return new Span<byte>(sha3Hash);
         }
     }
-    
+
+
 }
