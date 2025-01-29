@@ -86,31 +86,26 @@ public class CryptixJob : KaspaJob
         return new Span<byte>(product);
     }
 
-    protected virtual Span<byte> SerializeCoinbase(Span<byte> prePowHash, long timestamp, ulong nonce)
+
+    protected override Span<byte> SerializeCoinbase(Span<byte> prePowHash, long timestamp, ulong nonce)
     {
-        Span<byte> hashBytes = stackalloc byte[32];
+        byte[] hashBytes = new byte[32]; 
+        Span<byte> buffer = stackalloc byte[80];
+
+    
+        prePowHash.CopyTo(buffer[..32]);
+        BitConverter.GetBytes((ulong)timestamp).CopyTo(buffer[32..40]);
+        buffer[40..72].Clear(); 
+        BitConverter.GetBytes(nonce).CopyTo(buffer[72..80]);
+
         
-        using(var stream = new MemoryStream())
-        {
-            stream.Write(prePowHash);
-            stream.Write(BitConverter.GetBytes((ulong) timestamp));
-            stream.Write(new byte[32]); 
-            stream.Write(BitConverter.GetBytes(nonce));
-            
-            
-            coinbaseHasher.Digest(stream.ToArray(), hashBytes);
-            
-            // SHA3-256 
-            using (SHA3Managed sha3 = new SHA3Managed(256))
-            {
-                byte[] sha3Hash = sha3.ComputeHash(hashBytes.ToArray());
-                sha3Hash.CopyTo(hashBytes); 
-            }
-            
-            return (Span<byte>) hashBytes.ToArray();
-        }
+        var sha3Hasher = new Sha3_256();
+        sha3Hasher.Digest(buffer, hashBytes);
+
+        return hashBytes;
     }
 
+}
 
     
 
