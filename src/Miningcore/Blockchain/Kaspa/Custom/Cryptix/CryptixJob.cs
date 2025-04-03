@@ -456,7 +456,7 @@ public class CryptixJob : KaspaJob
 
         // Überwachen der Difficulty-Schwankungen
         decimal maxDifficultyDelta = 1000m; // Maximum allowed change in difficulty (upwards)
-        decimal minDifficultyDelta = 0.01m; // Minimum allowed change in difficulty
+        decimal minDifficultyDelta = 0.0001m; // Minimum allowed change in difficulty
         DateTime currentTime = DateTime.UtcNow;
         
         // Calculate the time span between difficulty changes
