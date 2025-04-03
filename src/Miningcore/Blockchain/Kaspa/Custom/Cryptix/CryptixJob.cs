@@ -20,6 +20,9 @@ public class CryptixJob : KaspaJob
     /* // DIFF CHECK NONCE SPAM
     private decimal lastDifficulty = 0;  
     private DateTime lastDifficultyChangeTime = DateTime.MinValue;
+    private static readonly Dictionary<string, List<string>> workerNonces = new();
+    private const int nonceHistorySize = 100; // Number of last nonces for comparison
+    private const double nonceSimilarityThreshold = 0.7; // Threshold - 70% similar
     */
 
     protected Blake3 blake3Hasher;
@@ -452,9 +455,32 @@ public class CryptixJob : KaspaJob
         var ratio = shareDiff / stratumDifficulty;
 
         /*
-        // ### START DIFF CHECK NONCE SPAM
+        // ### START DIFF CHECK and ANTI NONCE SPAM
 
-        // Überwachen der Difficulty-Schwankungen
+        // # Check Similar Nonces
+
+        // If the worker does not have an entry yet, initialize
+        if (!workerNonces.ContainsKey(worker.ConnectionId))
+            workerNonces[worker.ConnectionId] = new List<string>();
+
+        var nonceList = workerNonces[worker.ConnectionId];
+
+        // If too many nonces with the same prefix occur → suspected spam
+        if (nonceList.Count(n => n.StartsWith(nonce.Substring(0, 4))) > nonceHistorySize * nonceSimilarityThreshold)
+        {
+            throw new StratumException(StratumError.InvalidShare, "Suspicious Nonce pattern detected (possible spam)");
+        }
+
+        // Add nonce to history
+        nonceList.Add(nonce);
+
+        // Remove oldest nonces
+        if (nonceList.Count > nonceHistorySize)
+            nonceList.RemoveAt(0);
+        
+        // # Check Difficulty fluctuations
+
+        // Monitoring difficulty fluctuations
         decimal maxDifficultyDelta = 1000m; // Maximum allowed change in difficulty (upwards)
         decimal minDifficultyDelta = 0.0001m; // Minimum allowed change in difficulty
         DateTime currentTime = DateTime.UtcNow;
@@ -482,7 +508,7 @@ public class CryptixJob : KaspaJob
         lastDifficulty = stratumDifficulty;
         lastDifficultyChangeTime = currentTime;
 
-        // ###  END DIFF CHECK NONCE SPAM
+        // ###  DIFF CHECK and ANTI NONCE SPAM
         */
 
         // check if the share meets the much harder block difficulty (block candidate)
