@@ -100,6 +100,21 @@ public class CryptixJob : KaspaJob
             nibbleProduct[i] ^= data[i];
         }
 
+        byte[] productBeforeOct = (byte[])product.Clone();
+
+        // ** Octonion **
+        long[] octonion_result = new long[8];
+        OctonionHash(product, octonion_result);
+
+        for (int i = 0; i < 32; i++) {
+            long oct_value = octonion_result[i / 8];
+            
+            byte oct_value_u8 = (byte)((oct_value >> (8 * (i % 8))) & 0xFF);
+            
+            product[i] ^= oct_value_u8;
+        }
+
+
         // return
         return new Span<byte>(product);
     }
@@ -172,6 +187,89 @@ public class CryptixJob : KaspaJob
 
         return result;
     }
+
+    // Helpers
+
+    public static byte WrappingAdd8(byte a, byte b)
+    {
+        return (byte)((a + b) & 0xFF);
+    }
+
+    public static byte WrappingMul8(byte a, byte b)
+    {
+        return (byte)((a * b) & 0xFF);
+    }
+
+    public static long WrappingMul(long a, long b)
+    {
+        long low = (a & 0xFFFFFFFF) * (b & 0xFFFFFFFF);
+        long high = (a >> 32) * (b >> 32) + ((a & 0xFFFFFFFF) * (b >> 32) >> 32) + ((a >> 32) * (b & 0xFFFFFFFF) >> 32);
+
+        return low;
+    }
+
+    // Octonion
+    public static void OctonionMultiply(long[] a, long[] b, long[] result)
+    {
+        long[] res = new long[8];
+
+
+        res[0] = WrappingMul(a[0], b[0]) - WrappingMul(a[1], b[1]) - WrappingMul(a[2], b[2]) - WrappingMul(a[3], b[3]) 
+                - WrappingMul(a[4], b[4]) - WrappingMul(a[5], b[5]) - WrappingMul(a[6], b[6]) - WrappingMul(a[7], b[7]);
+
+        res[1] = WrappingMul(a[0], b[1]) + WrappingMul(a[1], b[0]) + WrappingMul(a[2], b[3]) - WrappingMul(a[3], b[2]) 
+                + WrappingMul(a[4], b[5]) - WrappingMul(a[5], b[4]) - WrappingMul(a[6], b[7]) + WrappingMul(a[7], b[6]);
+
+        res[2] = WrappingMul(a[0], b[2]) - WrappingMul(a[1], b[3]) + WrappingMul(a[2], b[0]) + WrappingMul(a[3], b[1]) 
+                + WrappingMul(a[4], b[6]) - WrappingMul(a[5], b[7]) + WrappingMul(a[6], b[4]) - WrappingMul(a[7], b[5]);
+
+        res[3] = WrappingMul(a[0], b[3]) + WrappingMul(a[1], b[2]) - WrappingMul(a[2], b[1]) + WrappingMul(a[3], b[0]) 
+                + WrappingMul(a[4], b[7]) + WrappingMul(a[5], b[6]) - WrappingMul(a[6], b[5]) + WrappingMul(a[7], b[4]);
+
+        res[4] = WrappingMul(a[0], b[4]) - WrappingMul(a[1], b[5]) - WrappingMul(a[2], b[6]) - WrappingMul(a[3], b[7]) 
+                + WrappingMul(a[4], b[0]) + WrappingMul(a[5], b[1]) + WrappingMul(a[6], b[2]) + WrappingMul(a[7], b[3]);
+
+        res[5] = WrappingMul(a[0], b[5]) + WrappingMul(a[1], b[4]) - WrappingMul(a[2], b[7]) + WrappingMul(a[3], b[6]) 
+                - WrappingMul(a[4], b[1]) + WrappingMul(a[5], b[0]) + WrappingMul(a[6], b[3]) + WrappingMul(a[7], b[2]);
+
+        res[6] = WrappingMul(a[0], b[6]) + WrappingMul(a[1], b[7]) + WrappingMul(a[2], b[4]) - WrappingMul(a[3], b[5]) 
+                - WrappingMul(a[4], b[2]) + WrappingMul(a[5], b[3]) + WrappingMul(a[6], b[0]) + WrappingMul(a[7], b[1]);
+
+        res[7] = WrappingMul(a[0], b[7]) - WrappingMul(a[1], b[6]) + WrappingMul(a[2], b[5]) + WrappingMul(a[3], b[4]) 
+                - WrappingMul(a[4], b[3]) + WrappingMul(a[5], b[2]) + WrappingMul(a[6], b[1]) + WrappingMul(a[7], b[0]);
+
+        for (int i = 0; i < 8; i++)
+        {
+            result[i] = res[i];
+        }
+    }
+
+    public static void OctonionHash(byte[] inputHash, long[] oct)
+    {
+        for (int i = 0; i < 8; i++)
+        {
+            oct[i] = (long)inputHash[i];
+        }
+
+        for (int i = 8; i < 32; i++)
+        {
+            long[] rotation = new long[8];
+            for (int j = 0; j < 8; j++)
+            {
+                rotation[j] = (long)inputHash[(i + j) % 32];
+            }
+
+            long[] result = new long[8];
+            OctonionMultiply(oct, rotation, result);
+
+            for (int j = 0; j < 8; j++)
+            {
+                oct[j] = result[j];
+            }
+        }
+    }
+
+
 
 }
 
