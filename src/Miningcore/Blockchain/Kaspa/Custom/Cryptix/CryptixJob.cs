@@ -431,16 +431,8 @@ public class CryptixJob : KaspaJob
             }
         }
 
-
-
-
-
-
-
-
-
         Span<byte> hashCoinbaseBytes = stackalloc byte[32];
-        shareHasher.Digest(ComputeCoinbase(prePowHashBytes, sha3_256Bytes), hashCoinbaseBytes);
+        shareHasher.Digest(ComputeCoinbase(prePowHashBytes, sha3_hash), hashCoinbaseBytes);
 
         var targetHashCoinbaseBytes = new Target(new BigInteger(hashCoinbaseBytes.ToNewReverseArray(), true, true));
         var hashCoinbaseBytesValue = targetHashCoinbaseBytes.ToUInt256();
