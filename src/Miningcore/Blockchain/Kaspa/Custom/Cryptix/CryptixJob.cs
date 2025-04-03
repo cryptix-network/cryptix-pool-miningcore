@@ -30,6 +30,9 @@ public class CryptixJob : KaspaJob
     protected override Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
     {
 
+        byte[] sha3Hash = new byte[data.Length];
+        data.CopyTo(sha3Hash);
+
         ushort[][] matrix = GenerateMatrix(prePowHash);
 
         // Nibbles
@@ -448,7 +451,7 @@ public class CryptixJob : KaspaJob
             }
         }
     }
-    
+
     /*
     // Sinusoidal Multiply (Tested in Testnet due to architecture rounding errors)
     static void SinusoidalMultiply(byte sinusIn, ref byte sinusOut) {
