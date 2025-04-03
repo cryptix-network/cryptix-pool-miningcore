@@ -448,7 +448,106 @@ public class CryptixJob : KaspaJob
             }
         }
     }
+    
+    /*
+    // Sinusoidal Multiply (Tested in Testnet due to architecture rounding errors)
+    static void SinusoidalMultiply(byte sinusIn, ref byte sinusOut) {
+        byte left = (byte)((sinusIn >> 4) & 0x0F);
+        byte right = (byte)(sinusIn & 0x0F);
 
+        for (int i = 0; i < 16; i++) {
+            byte temp = right;
+            right = (byte)((left ^ ((right * 31 + 13) & 0xFF) ^ (right >> 3) ^ (right * 5)) & 0x0F);
+            left = temp;
+        }
+
+        byte complexOp = (byte)((left * right + 97) & 0xFF);
+        byte nonlinearOp = (byte)((complexOp ^ (right >> 4) ^ (left * 11)) & 0xFF);
+
+        ushort sinusInU16 = (ushort)sinusIn;
+        float angle = (sinusInU16 % 360) * (float)(Math.PI / 180.0f);
+        float sinValue = (float)Math.Sin(angle);
+        byte sinLookup = (byte)(Math.Abs(sinValue) * 255.0f);
+
+        byte modulatedValue = (byte)((sinLookup ^ (sinLookup >> 3) ^ (sinLookup << 1) ^ 0xA5) & 0xFF);
+        byte sboxVal = (byte)((modulatedValue ^ (modulatedValue >> 4)) * 43 + 17);
+        byte obfuscated = (byte)(((sboxVal >> 2) | (sboxVal << 6)) ^ 0xF3 ^ 0xA5);
+
+        sinusOut = (byte)((obfuscated ^ (sboxVal * 7) ^ nonlinearOp + 0xF1) & 0xFF);
+    }
+
+    // Complex Lookup Table
+    static uint ChaoticRandom(uint x) {
+        for (int i = 0; i < 5; i++) {
+            x = ((x * 3646246005U) << 13) | (x >> (32 - 13));
+            x ^= 0xA5A5A5A5;
+        }
+        return x;
+    }
+
+    static List<uint> PrimeFactors(uint n) {
+        var factors = new List<uint>();
+        uint i = 2;
+        while (i * i <= n) {
+            while (n % i == 0) {
+                factors.Add(i);
+                n /= i;
+            }
+            i += 1;
+        }
+        if (n > 1) {
+            factors.Add(n);
+        }
+        return factors;
+    }
+
+    static uint SerialDependency(uint x, byte rounds) {
+        for (int i = 0; i < rounds; i++) {
+            x = ((x * 3 + 5) << 7) | (x >> (32 - 7));
+            x ^= ChaoticRandom(x);
+        }
+        return x;
+    }
+
+    static byte UnpredictableDepth(uint x) {
+        uint noise = ChaoticRandom(x) & 0xF;
+        return (byte)(10 + noise);
+    }
+
+    static byte RecursiveMultiplicationWithRandomness(byte dynLutInput) {
+        byte depth = UnpredictableDepth(dynLutInput);
+        return (byte)(SerialDependency(dynLutInput, depth) & 0xFF);
+    }
+
+    static byte RecursiveMultiplicationWithFactors(byte dynLutInput, byte depth) {
+        uint result = dynLutInput;
+
+        for (int i = 0; i < depth; i++) {
+            var factors = PrimeFactors(result);
+            foreach (var factor in factors) {
+                result = (result * factor) & 0xFFFFFFF;
+            }
+            result = (result * 3893621) & 0xFFFFFFF;
+        }
+
+        return (byte)(result & 0xFF);
+    }
+
+    static byte DynamicDepthMultiplication(byte dynLutInput) {
+        return RecursiveMultiplicationWithRandomness(dynLutInput);
+    }
+
+    static byte ComplexLookupTable(byte dynLutInput) {
+        return DynamicDepthMultiplication(dynLutInput);
+    }
+
+    // Method to process the complex lookup table on an array
+    static void ProcessComplexLookupTable(byte[] input, byte[] output, int numElements) {
+        for (int i = 0; i < numElements; i++) {
+            output[i] = ComplexLookupTable(input[i]);
+        }
+    }
+    */
 
 
 }
