@@ -16,6 +16,12 @@ namespace Miningcore.Blockchain.Kaspa.Custom.Cryptix;
 
 public class CryptixJob : KaspaJob
 {
+
+    /* // DIFF CHECK NONCE SPAM
+    private decimal lastDifficulty = 0;  
+    private DateTime lastDifficultyChangeTime = DateTime.MinValue;
+    */
+
     protected Blake3 blake3Hasher;
     protected Sha3_256 sha3_256Hasher;
 
@@ -444,6 +450,40 @@ public class CryptixJob : KaspaJob
         // diff check
         var stratumDifficulty = context.Difficulty;
         var ratio = shareDiff / stratumDifficulty;
+
+        /*
+        // ### START DIFF CHECK NONCE SPAM
+
+        // Überwachen der Difficulty-Schwankungen
+        decimal maxDifficultyDelta = 1000m; // Maximum allowed change in difficulty (upwards)
+        decimal minDifficultyDelta = 0.01m; // Minimum allowed change in difficulty
+        DateTime currentTime = DateTime.UtcNow;
+        
+        // Calculate the time span between difficulty changes
+        var timeDifference = currentTime - lastDifficultyChangeTime;
+
+        // Check if the difficulty fluctuates too quickly
+        if (lastDifficulty != 0 && timeDifference.TotalSeconds < 30)  // 30 seconds
+        {
+            // Checking the maximum difficulty variation
+            if (Math.Abs(stratumDifficulty - lastDifficulty) > maxDifficultyDelta)
+            {
+                throw new StratumException(StratumError.InvalidShare, "Unrealistic difficulty fluctuation detected (too high change)");
+            }
+
+            // Checking the minimum difficulty variation
+            if (Math.Abs(stratumDifficulty - lastDifficulty) < minDifficultyDelta)
+            {
+                throw new StratumException(StratumError.InvalidShare, "Unrealistic difficulty fluctuation detected (too low change)");
+            }
+        }
+
+        // Update the last difficulty and time
+        lastDifficulty = stratumDifficulty;
+        lastDifficultyChangeTime = currentTime;
+
+        // ###  END DIFF CHECK NONCE SPAM
+        */
 
         // check if the share meets the much harder block difficulty (block candidate)
         var isBlockCandidate = hashCoinbaseBytesValue <= blockTargetValue;
