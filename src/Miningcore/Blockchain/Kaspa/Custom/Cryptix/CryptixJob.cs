@@ -114,9 +114,189 @@ public class CryptixJob : KaspaJob
             product[i] ^= oct_value_u8;
         }
 
+        // **Non-Linear S-Box**
+        byte[] sbox = new byte[256];
+
+        for (int i = 0; i < 256; i++) {
+            byte i_u8 = (byte)i;
+
+            byte[] sourceArray;
+            byte rotateLeftVal, rotateRightVal;
+
+            if (i_u8 < 16) {
+                sourceArray = product;
+                rotateLeftVal = (byte)((nibbleProduct[3] ^ 0x4F) * 3 % 256);
+                rotateRightVal = (byte)((sha3Hash[2] ^ 0xD3) * 5 % 256);
+            }
+            else if (i_u8 < 32) {
+                sourceArray = sha3Hash;
+                rotateLeftVal = (byte)((product[7] ^ 0xA6) * 2 % 256);
+                rotateRightVal = (byte)((nibbleProduct[5] ^ 0x5B) * 7 % 256);
+            }
+            else if (i_u8 < 48) {
+                sourceArray = nibbleProduct;
+                rotateLeftVal = (byte)((productBeforeOct[1] ^ 0x9C) * 9 % 256);
+                rotateRightVal = (byte)((product[0] ^ 0x8E) * 3 % 256);
+            }
+            else if (i_u8 < 64) {
+                sourceArray = sha3Hash;
+                rotateLeftVal = (byte)((product[6] ^ 0x71) * 4 % 256);
+                rotateRightVal = (byte)((productBeforeOct[3] ^ 0x2F) * 5 % 256);
+            }
+            else if (i_u8 < 80) {
+                sourceArray = productBeforeOct;
+                rotateLeftVal = (byte)((nibbleProduct[4] ^ 0xB2) * 3 % 256);
+                rotateRightVal = (byte)((sha3Hash[7] ^ 0x6D) * 7 % 256);
+            }
+            else if (i_u8 < 96) {
+                sourceArray = sha3Hash;
+                rotateLeftVal = (byte)((product[0] ^ 0x58) * 6 % 256);
+                rotateRightVal = (byte)((nibbleProduct[1] ^ 0xEE) * 9 % 256);
+            }
+            else if (i_u8 < 112) {
+                sourceArray = product;
+                rotateLeftVal = (byte)((productBeforeOct[2] ^ 0x37) * 2 % 256);
+                rotateRightVal = (byte)((sha3Hash[6] ^ 0x44) * 6 % 256);
+            }
+            else if (i_u8 < 128) {
+                sourceArray = sha3Hash;
+                rotateLeftVal = (byte)((product[5] ^ 0x1A) * 5 % 256);
+                rotateRightVal = (byte)((sha3Hash[4] ^ 0x7C) * 8 % 256);
+            }
+            else if (i_u8 < 144) {
+                sourceArray = productBeforeOct;
+                rotateLeftVal = (byte)((nibbleProduct[3] ^ 0x93) * 7 % 256);
+                rotateRightVal = (byte)((product[2] ^ 0xAF) * 3 % 256);
+            }
+            else if (i_u8 < 160) {
+                sourceArray = sha3Hash;
+                rotateLeftVal = (byte)((product[7] ^ 0x29) * 9 % 256);
+                rotateRightVal = (byte)((nibbleProduct[5] ^ 0xDC) * 2 % 256);
+            }
+            else if (i_u8 < 176) {
+                sourceArray = nibbleProduct;
+                rotateLeftVal = (byte)((productBeforeOct[1] ^ 0x4E) * 4 % 256);
+                rotateRightVal = (byte)((sha3Hash[0] ^ 0x8B) * 3 % 256);
+            }
+            else if (i_u8 < 192) {
+                sourceArray = sha3Hash;
+                rotateLeftVal = (byte)((nibbleProduct[6] ^ 0xF3) * 5 % 256);
+                rotateRightVal = (byte)((productBeforeOct[3] ^ 0x62) * 8 % 256);
+            }
+            else if (i_u8 < 208) {
+                sourceArray = productBeforeOct;
+                rotateLeftVal = (byte)((product[4] ^ 0xB7) * 6 % 256);
+                rotateRightVal = (byte)((product[7] ^ 0x15) * 2 % 256);
+            }
+            else if (i_u8 < 224) {
+                sourceArray = sha3Hash;
+                rotateLeftVal = (byte)((product[0] ^ 0x2D) * 8 % 256);
+                rotateRightVal = (byte)((productBeforeOct[1] ^ 0xC8) * 7 % 256);
+            }
+            else if (i_u8 < 240) {
+                sourceArray = product;
+                rotateLeftVal = (byte)((productBeforeOct[2] ^ 0x6F) * 3 % 256);
+                rotateRightVal = (byte)((nibbleProduct[6] ^ 0x99) * 9 % 256);
+            }
+            else {
+                sourceArray = sha3Hash;
+                rotateLeftVal = (byte)((nibbleProduct[5] ^ 0xE1) * 7 % 256);
+                rotateRightVal = (byte)((sha3Hash[4] ^ 0x3B) * 5 % 256);
+            }
+
+            byte value =
+                (i_u8 < 16) ? (byte)((product[i_u8 % 32] * 0x03 + i_u8 * 0xAA) & 0xFF) :
+                (i_u8 < 32) ? (byte)((sha3Hash[(i_u8 - 16) % 32] * 0x05 + (i_u8 - 16) * 0xBB) & 0xFF) :
+                (i_u8 < 48) ? (byte)((productBeforeOct[(i_u8 - 32) % 32] * 0x07 + (i_u8 - 32) * 0xCC) & 0xFF) :
+                (i_u8 < 64) ? (byte)((nibbleProduct[(i_u8 - 48) % 32] * 0x0F + (i_u8 - 48) * 0xDD) & 0xFF) :
+                (i_u8 < 80) ? (byte)((product[(i_u8 - 64) % 32] * 0x11 + (i_u8 - 64) * 0xEE) & 0xFF) :
+                (i_u8 < 96) ? (byte)((sha3Hash[(i_u8 - 80) % 32] * 0x13 + (i_u8 - 80) * 0xFF) & 0xFF) :
+                (i_u8 < 112) ? (byte)((productBeforeOct[(i_u8 - 96) % 32] * 0x17 + (i_u8 - 96) * 0x11) & 0xFF) :
+                (i_u8 < 128) ? (byte)((nibbleProduct[(i_u8 - 112) % 32] * 0x19 + (i_u8 - 112) * 0x22) & 0xFF) :
+                (i_u8 < 144) ? (byte)((product[(i_u8 - 128) % 32] * 0x1D + (i_u8 - 128) * 0x33) & 0xFF) :
+                (i_u8 < 160) ? (byte)((sha3Hash[(i_u8 - 144) % 32] * 0x1F + (i_u8 - 144) * 0x44) & 0xFF) :
+                (i_u8 < 176) ? (byte)((productBeforeOct[(i_u8 - 160) % 32] * 0x23 + (i_u8 - 160) * 0x55) & 0xFF) :
+                (i_u8 < 192) ? (byte)((nibbleProduct[(i_u8 - 176) % 32] * 0x29 + (i_u8 - 176) * 0x66) & 0xFF) :
+                (i_u8 < 208) ? (byte)((product[(i_u8 - 192) % 32] * 0x2F + (i_u8 - 192) * 0x77) & 0xFF) :
+                (i_u8 < 224) ? (byte)((sha3Hash[(i_u8 - 208) % 32] * 0x31 + (i_u8 - 208) * 0x88) & 0xFF) :
+                (i_u8 < 240) ? (byte)((productBeforeOct[(i_u8 - 224) % 32] * 0x37 + (i_u8 - 224) * 0x99) & 0xFF) :
+                            (byte)((nibbleProduct[(i_u8 - 240) % 32] * 0x3F + (i_u8 - 240) * 0xAA) & 0xFF);
+
+            int rotateLeftShift = (product[(i + 1) % 32] + i) % 8;
+            int rotateRightShift = (sha3Hash[(i + 2) % 32] + i) % 8;
+
+            int rotationLeft = (rotateLeftVal << rotateLeftShift) | (rotateLeftVal >> (8 - rotateLeftShift));
+            int rotationRight = (rotateRightVal >> rotateRightShift) | (rotateRightVal << (8 - rotateRightShift));
+
+            rotationLeft &= 0xFF;
+            rotationRight &= 0xFF;
+
+            int index = (i + rotationLeft + rotationRight) % 32;
+            sbox[i] = (byte)(sourceArray[index] ^ value);
+        }
+
+        // Update Sbox Values
+        int index = (product_before_oct[2] % 8) + 1;  
+        int iterations = 1 + (product[index] % 2);
+
+        for (int j = 0; j < iterations; j++) {
+            byte[] temp_sbox = (byte[])sbox.Clone();
+
+            for (int i = 0; i < 256; i++) {
+                byte value = temp_sbox[i];
+
+                int rotate_left_shift = (product[(i + 1) % product.Length] + i + (i * 3)) % 8;
+                int rotate_right_shift = (hash_bytes[(i + 2) % hash_bytes.Length] + i + (i * 5)) % 8;
+
+                byte rotated_value = (byte)((value << rotate_left_shift) | (value >> (8 - rotate_left_shift)));
+                rotated_value |= (byte)((value >> rotate_right_shift) | (value << (8 - rotate_right_shift)));
+
+                byte xor_value = (byte)(((i + product[(i * 3) % product.Length] ^ hash_bytes[(i * 7) % hash_bytes.Length]) ^ 0xA5) << (i % 8));
+                xor_value ^= 0x55;
+
+                value ^= rotated_value;
+                value ^= xor_value;
+
+                temp_sbox[i] = value;
+            }
+
+            sbox = (byte[])temp_sbox.Clone();
+        }
+
+        // Blake3 Chaining
+        int index_blake = (product_before_oct[5] % 8) + 1;  
+        int iterations_blake = 1 + (product[index_blake] % 3);
+
+        byte[] b3_hash_array = (byte[])product.Clone(); 
+        for (int j = 0; j < iterations_blake; j++) {
+            // BLAKE3 Hashing
+            using (var b3_hasher = new Blake3.Blake3()) {
+                b3_hasher.Update(b3_hash_array);
+                byte[] product_blake3 = b3_hasher.Finalize();
+                byte[] b3_hash_bytes = product_blake3;
+
+                // Convert
+                b3_hash_array = (byte[])b3_hash_bytes.Clone();
+            }
+        }
+
+        // Apply S-Box to the product with XOR
+        for (int i = 0; i < 32; i++) {
+            byte[] ref_array = (i * 31) % 4 switch {
+                0 => nibble_product,
+                1 => hash_bytes,
+                2 => product,
+                _ => product_before_oct,
+            };
+
+            int byte_val = ref_array[(i * 13) % ref_array.Length];
+
+            int index = (byte_val + product[(i * 31) % product.Length] + hash_bytes[(i * 19) % hash_bytes.Length] + i * 41) % 256;  
+            b3_hash_array[i] ^= sbox[index]; 
+        }
 
         // return
-        return new Span<byte>(product);
+        return new Span<byte>(b3_hash_array);
     }
 
  protected override Share ProcessShareInternal(StratumConnection worker, string nonce)
