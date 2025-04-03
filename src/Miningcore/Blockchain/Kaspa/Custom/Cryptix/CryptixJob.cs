@@ -343,7 +343,6 @@ public class CryptixJob : KaspaJob
         byte first_byte = sha3_hash[0];
         byte iteration_count = (byte)((first_byte % 2) + 1);
 
-
         for (byte i = 0; i < iteration_count; ++i)
         {
             sha3_256Hasher.Digest(sha3_hash, sha3_hash); 
