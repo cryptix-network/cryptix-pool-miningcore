@@ -16,7 +16,7 @@ namespace Miningcore.Blockchain.Kaspa.Custom.Cryptix;
 
 public class CryptixJob : KaspaJob
 {
-
+    protected Blake3 blake3Hasher;
     protected Sha3_256 sha3_256Hasher;
 
     public CryptixJob(IHashAlgorithm customBlockHeaderHasher, IHashAlgorithm customCoinbaseHasher, IHashAlgorithm customShareHasher)
@@ -24,6 +24,7 @@ public class CryptixJob : KaspaJob
     {
 
          this.sha3_256Hasher = new Sha3_256();
+         this.blake3Hasher = new Blake3();
     }
 
     protected override Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
@@ -39,49 +40,64 @@ public class CryptixJob : KaspaJob
             nibbles[2 * i + 1] = (byte)(data[i] & 0x0F);
         }
 
-        // Product-Array
+        // Product-Arrays
         byte[] product = new byte[32];
-        
+        byte[] nibbleProduct = new byte[32];
+
         for (int i = 0; i < 32; i++)
         {
-            ushort sum1 = 0;
-            ushort sum2 = 0;
+            uint sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0;
             
-            // Matrix Multi
+            // Matrix Multiplication
             for (int j = 0; j < 64; j++)
             {
-                ushort elem = (ushort)nibbles[j];
-                sum1 += (ushort)(matrix[2 * i][j] * elem);
-                sum2 += (ushort)(matrix[2 * i + 1][j] * elem);
+                uint elem = nibbles[j];
+                sum1 += (uint)(matrix[2 * i][j] * elem);
+                sum2 += (uint)(matrix[2 * i + 1][j] * elem);
+                sum3 += (uint)(matrix[1 * i + 2][j] * elem);
+                sum4 += (uint)(matrix[1 * i + 3][j] * elem);
             }
 
-            // Nibbles 
-            byte aNibble = (byte)((sum1 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum1 >> 8) & 0xF));
-            byte bNibble = (byte)((sum2 & 0xF) ^ ((sum1 >> 4) & 0xF) ^ ((sum2 >> 8) & 0xF));
+            // A Nibble
+            byte aNibble = (byte)((sum1 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum3 >> 8) & 0xF)
+                ^ ((sum1 * 0xABCD >> 12) & 0xF)
+                ^ ((sum1 * 0x1234 >> 8) & 0xF)
+                ^ ((sum2 * 0x5678 >> 16) & 0xF)
+                ^ ((sum3 * 0x9ABC >> 4) & 0xF)
+                ^ ((sum1 << 3 & 0xF) ^ (sum3 >> 5 & 0xF)));
 
-            // Komb
+            // B Nibble
+            byte bNibble = (byte)((sum2 & 0xF) ^ ((sum1 >> 4) & 0xF) ^ ((sum4 >> 8) & 0xF)
+                ^ ((sum2 * 0xDCBA >> 14) & 0xF)
+                ^ ((sum2 * 0x8765 >> 10) & 0xF)
+                ^ ((sum1 * 0x4321 >> 6) & 0xF)
+                ^ ((sum4 << 2 ^ sum1 >> 1) & 0xF));
+
+            // C Nibble
+            byte cNibble = (byte)((sum3 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum2 >> 8) & 0xF)
+                ^ ((sum3 * 0xF135 >> 10) & 0xF)
+                ^ ((sum3 * 0x2468 >> 12) & 0xF)
+                ^ ((sum4 * 0xACEF >> 8) & 0xF)
+                ^ ((sum2 * 0x1357 >> 4) & 0xF)
+                ^ ((sum3 << 5 & 0xF) ^ (sum1 >> 7 & 0xF)));
+
+            // D Nibble
+            byte dNibble = (byte)((sum1 & 0xF) ^ ((sum4 >> 4) & 0xF) ^ ((sum1 >> 8) & 0xF)
+                ^ ((sum4 * 0x57A3 >> 6) & 0xF)
+                ^ ((sum3 * 0xD4E3 >> 12) & 0xF)
+                ^ ((sum1 * 0x9F8B >> 10) & 0xF)
+                ^ ((sum4 << 4 ^ (sum1 + sum2)) & 0xF));
+
+            // Combine into final products
+            nibbleProduct[i] = (byte)((cNibble << 4) | dNibble);
             product[i] = (byte)((aNibble << 4) | bNibble);
         }
 
-        // XOR 
+        // XOR with original data
         for (int i = 0; i < 32; i++)
         {
             product[i] ^= data[i];
-        }
-
-        // final_x 
-        byte[] final_x = new byte[32]
-        {
-            0x3F, 0xC2, 0xF2, 0xE2, 0xD1, 0x55, 0x81, 0x92,
-            0xA0, 0x6B, 0xF5, 0x3F, 0x5A, 0x70, 0x32, 0xB4,
-            0xE4, 0x84, 0xE4, 0xCB, 0x81, 0x73, 0xE7, 0xE0,
-            0xD2, 0x7F, 0x8C, 0x55, 0xAD, 0x8C, 0x60, 0x8F
-        };
-
-        // XOR  final_x
-        for (int i = 0; i < 32; i++)
-        {
-            product[i] ^= final_x[i];
+            nibbleProduct[i] ^= data[i];
         }
 
         // return
