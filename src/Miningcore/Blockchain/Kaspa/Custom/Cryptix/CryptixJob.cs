@@ -18,11 +18,21 @@ public class CryptixJob : KaspaJob
 {
 
     /* // DIFF CHECK NONCE SPAM
+
+    // Difficulty fluctuations
     private decimal lastDifficulty = 0;  
     private DateTime lastDifficultyChangeTime = DateTime.MinValue;
     private static readonly Dictionary<string, List<string>> workerNonces = new();
+
+    // Nonce Spam similar Nonces
     private const int nonceHistorySize = 100; // Number of last nonces for comparison
     private const double nonceSimilarityThreshold = 0.7; // Threshold - 70% similar
+
+    // Nonce Spam maximum Nonces
+    // Maximum accepted difficulty (10x the current one)
+    decimal maxAcceptedDiffMultiplier = 10m; 
+    decimal maxAcceptedDifficulty = stratumDifficulty * maxAcceptedDiffMultiplier;
+
     */
 
     protected Blake3 blake3Hasher;
@@ -533,6 +543,14 @@ public class CryptixJob : KaspaJob
             else
                 throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
         }
+        
+        /*
+        // Upper limit: Block extreme difficulty shares (fake high diff)
+        if (shareDiff > maxAcceptedDifficulty)
+        {
+            throw new StratumException(StratumError.InvalidShare, $"unrealistic high difficulty share detected ({shareDiff})");
+        }
+        */
 
         var result = new Share
         {
