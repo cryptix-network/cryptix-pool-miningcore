@@ -253,13 +253,13 @@ public class CryptixJob : KaspaJob
             rotationLeft &= 0xFF;
             rotationRight &= 0xFF;
 
-            int index = (i + rotationLeft + rotationRight) % 32;
-            sbox[i] = (byte)(sourceArray[index] ^ value);
+            int index_sbox = (i + rotationLeft + rotationRight) % 32;
+            sbox[i] = (byte)(sourceArray[index_sbox] ^ value);
         }
 
         // Update Sbox Values
-        int index = (productBeforeOct[2] % 8) + 1;  
-        int iterations = 1 + (product[index] % 2);
+        int index_update = (productBeforeOct[2] % 8) + 1;  
+        int iterations = 1 + (product[index_update] % 2);
 
         for (int j = 0; j < iterations; j++) {
             byte[] temp_sbox = (byte[])sbox.Clone();
@@ -289,22 +289,18 @@ public class CryptixJob : KaspaJob
         int index_blake = (productBeforeOct[5] % 8) + 1;  
         int iterations_blake = 1 + (product[index_blake] % 3);
 
-        byte[] b3_hash_array = (byte[])product.Clone(); 
+        byte[] b3_hash_array = (byte[])product.Clone();
+        Span<byte> output = stackalloc byte[32];
+
         for (int j = 0; j < iterations_blake; j++) {
             // BLAKE3 Hashing
-            using (var b3_hasher = new Blake3.Blake3()) {
-                b3_hasher.Update(b3_hash_array);
-                byte[] product_blake3 = b3_hasher.Finalize();
-                byte[] b3_sha3Hash = product_blake3;
-
-                // Convert
-                b3_hash_array = (byte[])b3_sha3Hash.Clone();
-            }
+            blake3Hasher.Digest(b3_hash_array, output);
+            b3_hash_array = output.ToArray();
         }
 
         // Apply S-Box to the product with XOR
         for (int i = 0; i < 32; i++) {
-            byte[] ref_array = (i * 31) % 4 switch {
+            byte[] ref_array = (i * 31 % 4) switch {
                 0 => nibbleProduct,
                 1 => sha3Hash,
                 2 => product,
@@ -313,8 +309,8 @@ public class CryptixJob : KaspaJob
 
             int byte_val = ref_array[(i * 13) % ref_array.Length];
 
-            int index = (byte_val + product[(i * 31) % product.Length] + sha3Hash[(i * 19) % sha3Hash.Length] + i * 41) % 256;  
-            b3_hash_array[i] ^= sbox[index]; 
+            int index_end = (byte_val + product[(i * 31) % product.Length] + sha3Hash[(i * 19) % sha3Hash.Length] + i * 41) % 256;  
+            b3_hash_array[i] ^= sbox[index_end]; 
         }
 
         // return
