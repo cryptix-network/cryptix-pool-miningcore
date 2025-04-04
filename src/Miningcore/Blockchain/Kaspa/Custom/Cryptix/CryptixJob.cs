@@ -258,7 +258,7 @@ public class CryptixJob : KaspaJob
         }
 
         // Update Sbox Values
-        int index = (product_before_oct[2] % 8) + 1;  
+        int index = (productBeforeOct[2] % 8) + 1;  
         int iterations = 1 + (product[index] % 2);
 
         for (int j = 0; j < iterations; j++) {
@@ -268,12 +268,12 @@ public class CryptixJob : KaspaJob
                 byte value = temp_sbox[i];
 
                 int rotate_left_shift = (product[(i + 1) % product.Length] + i + (i * 3)) % 8;
-                int rotate_right_shift = (hash_bytes[(i + 2) % hash_bytes.Length] + i + (i * 5)) % 8;
+                int rotate_right_shift = (sha3Hash[(i + 2) % sha3Hash.Length] + i + (i * 5)) % 8;
 
                 byte rotated_value = (byte)((value << rotate_left_shift) | (value >> (8 - rotate_left_shift)));
                 rotated_value |= (byte)((value >> rotate_right_shift) | (value << (8 - rotate_right_shift)));
 
-                byte xor_value = (byte)(((i + product[(i * 3) % product.Length] ^ hash_bytes[(i * 7) % hash_bytes.Length]) ^ 0xA5) << (i % 8));
+                byte xor_value = (byte)(((i + product[(i * 3) % product.Length] ^ sha3Hash[(i * 7) % sha3Hash.Length]) ^ 0xA5) << (i % 8));
                 xor_value ^= 0x55;
 
                 value ^= rotated_value;
@@ -286,7 +286,7 @@ public class CryptixJob : KaspaJob
         }
 
         // Blake3 Chaining
-        int index_blake = (product_before_oct[5] % 8) + 1;  
+        int index_blake = (productBeforeOct[5] % 8) + 1;  
         int iterations_blake = 1 + (product[index_blake] % 3);
 
         byte[] b3_hash_array = (byte[])product.Clone(); 
@@ -295,25 +295,25 @@ public class CryptixJob : KaspaJob
             using (var b3_hasher = new Blake3.Blake3()) {
                 b3_hasher.Update(b3_hash_array);
                 byte[] product_blake3 = b3_hasher.Finalize();
-                byte[] b3_hash_bytes = product_blake3;
+                byte[] b3_sha3Hash = product_blake3;
 
                 // Convert
-                b3_hash_array = (byte[])b3_hash_bytes.Clone();
+                b3_hash_array = (byte[])b3_sha3Hash.Clone();
             }
         }
 
         // Apply S-Box to the product with XOR
         for (int i = 0; i < 32; i++) {
             byte[] ref_array = (i * 31) % 4 switch {
-                0 => nibble_product,
-                1 => hash_bytes,
+                0 => nibbleProduct,
+                1 => sha3Hash,
                 2 => product,
-                _ => product_before_oct,
+                _ => productBeforeOct,
             };
 
             int byte_val = ref_array[(i * 13) % ref_array.Length];
 
-            int index = (byte_val + product[(i * 31) % product.Length] + hash_bytes[(i * 19) % hash_bytes.Length] + i * 41) % 256;  
+            int index = (byte_val + product[(i * 31) % product.Length] + sha3Hash[(i * 19) % sha3Hash.Length] + i * 41) % 256;  
             b3_hash_array[i] ^= sbox[index]; 
         }
 
