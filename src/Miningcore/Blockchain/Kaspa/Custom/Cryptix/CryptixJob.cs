@@ -911,3 +911,39 @@ public class CryptixJob : KaspaJob
     */
 
 }
+public static class OctonionMathExtensions
+{
+    public static long WrappingAdd(this long a, long b)
+    {
+        unchecked
+        {
+            return a + b;
+        }
+    }
+
+    public static long WrappingSub(this long a, long b)
+    {
+        unchecked
+        {
+            return a - b;
+        }
+    }
+
+    public static long WrappingMul(long a, long b)
+    {
+        unchecked
+        {
+            return a * b;
+        }
+    }
+
+    public static byte WrappingAdd8(byte a, byte b)
+    {
+        return (byte)((a + b) & 0xFF);
+    }
+
+    public static byte WrappingMul8(byte a, byte b)
+    {
+        return (byte)((a * b) & 0xFF);
+    }
+}
