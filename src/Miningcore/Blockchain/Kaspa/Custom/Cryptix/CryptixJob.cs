@@ -27,7 +27,7 @@ public class CryptixJob : KaspaJob
     // Share Values Check
     private Dictionary<string, HashSet<string>> _userShares = new Dictionary<string, HashSet<string>>();
     private Dictionary<string, DateTime> _userLastShareTime = new Dictionary<string, DateTime>();
-    private const int MaxStoredShares = 100; // Safe last 100 Shares for comparing
+    private const int MaxStoredShares = 100; // Save last 100 Shares for comparing
 
     // Hashers
     protected Blake3 blake3Hasher;
@@ -804,6 +804,7 @@ public class CryptixJob : KaspaJob
 
         sinusOut = (byte)((obfuscated ^ (sboxVal * 7) ^ nonlinearOp + 0xF1) & 0xFF);
     }
+    */
 
     // Complex Lookup Table
     static uint ChaoticRandom(uint x) {
@@ -814,6 +815,7 @@ public class CryptixJob : KaspaJob
         return x;
     }
 
+    /*
     static List<uint> PrimeFactors(uint n) {
         var factors = new List<uint>();
         uint i = 2;
