@@ -480,8 +480,8 @@ public class CryptixJob : KaspaJob
 
         // Nonce and Diff Check 
         
-        bool isHighDiffEnabled = true;
-        bool isNonceSpamCheckEnabled = true;
+        bool isHighDiffEnabled = false;
+        bool isNonceSpamCheckEnabled = false;
         bool isDuplicateShareCheckEnabled = true;
         
         string contextKey = context.ToString(); 
