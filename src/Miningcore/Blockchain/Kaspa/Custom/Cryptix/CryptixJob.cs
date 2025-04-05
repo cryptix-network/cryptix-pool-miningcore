@@ -19,13 +19,15 @@ public class CryptixJob : KaspaJob
 
     // Share & Nonce Spam
 
+    // === CONFIG ===
     // Shares per Second
-    private DateTime _lastShareTime = DateTime.MinValue; 
+    private DateTime _lastShareTime = DateTime.MinValue;
 
-    private const int MaxSharesPerSecond = 2; // 2 Shares per Second allowed for every device
+    private const int MaxSharesPerSecond = 3; // 3 Shares per Second allowed for every worker
 
     // Share Values Check
-    private HashSet<string> _userShares = new HashSet<string>();
+    private Dictionary<string, HashSet<string>> _userShares = new Dictionary<string, HashSet<string>>();
+    private Dictionary<string, DateTime> _userLastShareTime = new Dictionary<string, DateTime>();
     private const int MaxStoredShares = 100; // Safe last 100 Shares for comparing
 
     // Hashers
@@ -477,47 +479,61 @@ public class CryptixJob : KaspaJob
         var targetHashCoinbaseBytes = new Target(new BigInteger(hashCoinbaseBytes.ToNewReverseArray(), true, true));
         var hashCoinbaseBytesValue = targetHashCoinbaseBytes.ToUInt256();
         //throw new StratumException(StratumError.LowDifficultyShare, $"nonce: {nonce} ||| hashCoinbaseBytes: {hashCoinbaseBytes.ToHexString()} ||| BigInteger: {targetHashCoinbaseBytes.ToBigInteger()} ||| Target: {hashCoinbaseBytesValue} - [stratum: {KaspaUtils.DifficultyToTarget(context.Difficulty)} - blockTemplate: {blockTargetValue}] ||| BigToCompact: {KaspaUtils.BigToCompact(targetHashCoinbaseBytes.ToBigInteger())} - [stratum: {KaspaUtils.BigToCompact(KaspaUtils.DifficultyToTarget(context.Difficulty))} - blockTemplate: {BlockTemplate.Header.Bits}] ||| shareDiff: {(double) new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier} - [stratum: {context.Difficulty} - blockTemplate: {KaspaUtils.TargetToDifficulty(KaspaUtils.CompactToBig(BlockTemplate.Header.Bits)) * (double) KaspaConstants.MinHash}]");
+        // Use context as unique identifier for worker (can also use a specific property)
 
-        // Calculate shareDiff
+        string contextKey = context.ToString(); // Use context as identifier
+
+        // Calculate share difficulty
         var shareDiff = (double)new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier;
 
-        // Difficulty check
         var stratumDifficulty = context.Difficulty;
         var ratio = shareDiff / stratumDifficulty;
 
-        // Check if the share satisfies the block difficulty (Block candidate)
         var isBlockCandidate = hashCoinbaseBytesValue <= blockTargetValue;
 
-        // Check if the miner is submitting too many shares in a short time
-        if (DateTime.Now - _lastShareTime < TimeSpan.FromSeconds(1.0 / MaxSharesPerSecond))
+        // ---------------------------
+        // → PER-USER SHARE TRACKING
+        // ---------------------------
+
+        // Last share timestamp for this worker
+        var lastShareTime = _userLastShareTime[contextKey];
+
+        // Check for share spam (too many requests in short time)
+        if (DateTime.Now - lastShareTime < TimeSpan.FromSeconds(1.0 / MaxSharesPerSecond))
         {
-            throw new StratumException(StratumError.LowDifficultyShare, "Nonce Spam Share detected. To much Requests.");
+            throw new StratumException(StratumError.LowDifficultyShare, "Nonce Spam Share detected. Too many requests.");
         }
 
-        // Update the last share time
-        _lastShareTime = DateTime.Now;
+        // Update share timestamp
+        _userLastShareTime[contextKey] = DateTime.Now;
 
-        // Convert uint256 to byte array
-        byte[] byteArray = hashCoinbaseBytesValue.ToBytes();
+        // ---------------------------
+        // → DUPLICATE SHARE CHECK
+        // ---------------------------
 
-        // Convert byte array to hex string
-        string shareIdentifier = BitConverter.ToString(byteArray).Replace("-", "").ToLower();
+        string shareIdentifier = BitConverter.ToString(hashCoinbaseBytesValue.ToBytes()).Replace("-", "").ToLower();
 
-        // Check if the share already exists (block duplicates)
-        if (_userShares.Contains(shareIdentifier))
+        // Check if share was already submitted
+        if (_userShares[contextKey].Contains(shareIdentifier))
         {
-            throw new StratumException(StratumError.LowDifficultyShare, "Nonce Spam Share detected. This share has already been submitted.");
+            throw new StratumException(StratumError.LowDifficultyShare, "Duplicate share detected. Already submitted.");
         }
 
-        // Add share to history
-        if (_userShares.Count >= MaxStoredShares)
+        // Remove the oldest share if there are more than 100
+        if (_userShares[contextKey].Count >= MaxStoredShares)
         {
-            _userShares.Remove(_userShares.First());
+            _userShares[contextKey].Remove(_userShares[contextKey].First());
         }
 
-        _userShares.Add(shareIdentifier);
+        // Add the share to the history
+        _userShares[contextKey].Add(shareIdentifier);
 
-        // If the ratio is too low (< 0.99), it's too easy
+        // ---------------------------
+        // → DIFFICULTY VALIDATION
+        // ---------------------------
+
+        // If share doesn't meet block difficulty, check if it should be allowed
+        // Min Diff
         if (!isBlockCandidate && ratio < 0.99)
         {
             if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
@@ -535,7 +551,9 @@ public class CryptixJob : KaspaJob
             }
         }
 
-        const double MAX_RATIO = 99999999999;  // MAX RATIO FOR HIGH SHARES
+        // Max Diff
+        const double MAX_RATIO = 99999999999; 
+
         if (!isBlockCandidate && ratio > MAX_RATIO)
         {
             if (hashCoinbaseBytesValue <= blockTargetValue)
@@ -560,15 +578,19 @@ public class CryptixJob : KaspaJob
             }
         }
 
-        // Create the result object
+        // ---------------------------
+        // → RESULT OBJECT
+        // ---------------------------
+
         var result = new Share
         {
-            BlockHeight = (long) BlockTemplate.Header.DaaScore,
+            BlockHeight = (long)BlockTemplate.Header.DaaScore,
             NetworkDifficulty = Difficulty,
             Difficulty = context.Difficulty / shareMultiplier
         };
 
-        if(isBlockCandidate)
+        // If the share is a block candidate, include block hash
+        if (isBlockCandidate)
         {
             var hashBytes = SerializeHeader(BlockTemplate.Header, false);
 
@@ -577,7 +599,6 @@ public class CryptixJob : KaspaJob
         }
 
         return result;
-
     }
 
     // Helpers Rotate
