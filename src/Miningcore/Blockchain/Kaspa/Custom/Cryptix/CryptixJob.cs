@@ -482,7 +482,7 @@ public class CryptixJob : KaspaJob
         
         bool isHighDiffEnabled = false;
         bool isNonceSpamCheckEnabled = false;
-        bool isDuplicateShareCheckEnabled = true;
+        bool isDuplicateShareCheckEnabled = false;
         
         string contextKey = context.ToString(); 
 
@@ -539,21 +539,22 @@ public class CryptixJob : KaspaJob
         // ---------------------------
 
         // Min Diff
-        if (!isBlockCandidate && ratio < 0.99 )
+        if(!isBlockCandidate && ratio < 0.99)
         {
-            if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+            // check if share matched the previous difficulty from before a vardiff retarget
+            if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
             {
                 ratio = shareDiff / context.PreviousDifficulty.Value;
 
-                if (ratio < 0.99)
+                if(ratio < 0.99)
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
+                // use previous difficulty
                 stratumDifficulty = context.PreviousDifficulty.Value;
             }
+
             else
-            {
                 throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
-            }
         }
 
         // Max Diff
@@ -806,6 +807,7 @@ public class CryptixJob : KaspaJob
     }
     */
 
+    /*
     // Complex Lookup Table
     static uint ChaoticRandom(uint x) {
         for (int i = 0; i < 5; i++) {
@@ -815,7 +817,7 @@ public class CryptixJob : KaspaJob
         return x;
     }
 
-    /*
+
     static List<uint> PrimeFactors(uint n) {
         var factors = new List<uint>();
         uint i = 2;
