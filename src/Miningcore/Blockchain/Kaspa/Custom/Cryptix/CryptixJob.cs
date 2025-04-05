@@ -17,9 +17,8 @@ namespace Miningcore.Blockchain.Kaspa.Custom.Cryptix;
 public class CryptixJob : KaspaJob
 {
 
-    // Share & Nonce Spam
-
     // === CONFIG ===
+
     // Shares per Second
     private DateTime _lastShareTime = DateTime.MinValue;
 
@@ -478,12 +477,15 @@ public class CryptixJob : KaspaJob
 
         var targetHashCoinbaseBytes = new Target(new BigInteger(hashCoinbaseBytes.ToNewReverseArray(), true, true));
         var hashCoinbaseBytesValue = targetHashCoinbaseBytes.ToUInt256();
-        //throw new StratumException(StratumError.LowDifficultyShare, $"nonce: {nonce} ||| hashCoinbaseBytes: {hashCoinbaseBytes.ToHexString()} ||| BigInteger: {targetHashCoinbaseBytes.ToBigInteger()} ||| Target: {hashCoinbaseBytesValue} - [stratum: {KaspaUtils.DifficultyToTarget(context.Difficulty)} - blockTemplate: {blockTargetValue}] ||| BigToCompact: {KaspaUtils.BigToCompact(targetHashCoinbaseBytes.ToBigInteger())} - [stratum: {KaspaUtils.BigToCompact(KaspaUtils.DifficultyToTarget(context.Difficulty))} - blockTemplate: {BlockTemplate.Header.Bits}] ||| shareDiff: {(double) new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier} - [stratum: {context.Difficulty} - blockTemplate: {KaspaUtils.TargetToDifficulty(KaspaUtils.CompactToBig(BlockTemplate.Header.Bits)) * (double) KaspaConstants.MinHash}]");
-        // Use context as unique identifier for worker (can also use a specific property)
 
-        string contextKey = context.ToString(); // Use context as identifier
+        // Nonce and Diff Check 
+        
+        bool isHighDiffEnabled = true;
+        bool isNonceSpamCheckEnabled = true;
+        bool isDuplicateShareCheckEnabled = true;
+        
+        string contextKey = context.ToString(); 
 
-        // Calculate share difficulty
         var shareDiff = (double)new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier;
 
         var stratumDifficulty = context.Difficulty;
@@ -495,16 +497,23 @@ public class CryptixJob : KaspaJob
         // → PER-USER SHARE TRACKING
         // ---------------------------
 
-        // Last share timestamp for this worker
+        if (!_userLastShareTime.ContainsKey(contextKey))
+        {
+            _userLastShareTime[contextKey] = DateTime.MinValue;
+            _userShares[contextKey] = new HashSet<string>();
+        }
+
         var lastShareTime = _userLastShareTime[contextKey];
 
-        // Check for share spam (too many requests in short time)
-        if (DateTime.Now - lastShareTime < TimeSpan.FromSeconds(1.0 / MaxSharesPerSecond))
+        // ---------------------------
+        // → NONCE SPAM CHECK
+        // ---------------------------
+
+        if (isNonceSpamCheckEnabled && DateTime.Now - lastShareTime < TimeSpan.FromSeconds(1.0 / MaxSharesPerSecond))
         {
             throw new StratumException(StratumError.LowDifficultyShare, "Nonce Spam Share detected. Too many requests.");
         }
 
-        // Update share timestamp
         _userLastShareTime[contextKey] = DateTime.Now;
 
         // ---------------------------
@@ -513,28 +522,24 @@ public class CryptixJob : KaspaJob
 
         string shareIdentifier = BitConverter.ToString(hashCoinbaseBytesValue.ToBytes()).Replace("-", "").ToLower();
 
-        // Check if share was already submitted
-        if (_userShares[contextKey].Contains(shareIdentifier))
+        if (isDuplicateShareCheckEnabled && _userShares[contextKey].Contains(shareIdentifier))
         {
             throw new StratumException(StratumError.LowDifficultyShare, "Duplicate share detected. Already submitted.");
         }
 
-        // Remove the oldest share if there are more than 100
         if (_userShares[contextKey].Count >= MaxStoredShares)
         {
             _userShares[contextKey].Remove(_userShares[contextKey].First());
         }
 
-        // Add the share to the history
         _userShares[contextKey].Add(shareIdentifier);
 
         // ---------------------------
         // → DIFFICULTY VALIDATION
         // ---------------------------
 
-        // If share doesn't meet block difficulty, check if it should be allowed
         // Min Diff
-        if (!isBlockCandidate && ratio < 0.99)
+        if (!isBlockCandidate && ratio < 0.99 && isHighDiffEnabled)
         {
             if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
             {
@@ -552,9 +557,9 @@ public class CryptixJob : KaspaJob
         }
 
         // Max Diff
-        const double MAX_RATIO = 99999999999; 
+        const double MAX_RATIO = 99999999999;
 
-        if (!isBlockCandidate && ratio > MAX_RATIO)
+        if (!isBlockCandidate && ratio > MAX_RATIO && isHighDiffEnabled)
         {
             if (hashCoinbaseBytesValue <= blockTargetValue)
             {
@@ -589,7 +594,6 @@ public class CryptixJob : KaspaJob
             Difficulty = context.Difficulty / shareMultiplier
         };
 
-        // If the share is a block candidate, include block hash
         if (isBlockCandidate)
         {
             var hashBytes = SerializeHeader(BlockTemplate.Header, false);
@@ -599,6 +603,7 @@ public class CryptixJob : KaspaJob
         }
 
         return result;
+
     }
 
     // Helpers Rotate
