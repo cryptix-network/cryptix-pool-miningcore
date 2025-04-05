@@ -17,12 +17,12 @@ namespace Miningcore.Blockchain.Kaspa.Custom.Cryptix;
 public class CryptixJob : KaspaJob
 {
 
-    // Share Spam
+    // Share & Nonce Spam
 
     // Shares per Second
     private DateTime _lastShareTime = DateTime.MinValue; 
 
-    private const int MaxSharesPerSecond = 2; // 2 Shares per Second allowed
+    private const int MaxSharesPerSecond = 2; // 2 Shares per Second allowed for every device
 
     // Share Values Check
     private HashSet<string> _userShares = new HashSet<string>();
@@ -535,7 +535,7 @@ public class CryptixJob : KaspaJob
             }
         }
 
-        const double MAX_RATIO = 10000;  // MAX RATIO FOR HIGH SHARES
+        const double MAX_RATIO = 99999999;  // MAX RATIO FOR HIGH SHARES
         if (!isBlockCandidate && ratio > MAX_RATIO)
         {
             if (hashCoinbaseBytesValue <= blockTargetValue)
@@ -590,81 +590,6 @@ public class CryptixJob : KaspaJob
     {
         return (byte)((value >> shiftAmount) | (value << (8 - shiftAmount)));
     }
-
-
-/*
- protected override Share ProcessShareInternal(StratumConnection worker, string nonce)
-    {
-        var context = worker.ContextAs<KaspaWorkerContext>();
-
-        BlockTemplate.Header.Nonce = Convert.ToUInt64(nonce, 16);
-
-        var prePowHashBytes = SerializeHeader(BlockTemplate.Header, true);
-        var coinbaseBytes = SerializeCoinbase(prePowHashBytes, BlockTemplate.Header.Timestamp, BlockTemplate.Header.Nonce);
-
-
-        Span<byte> sha3_256Bytes = stackalloc byte[32];
-        sha3_256Hasher.Digest(coinbaseBytes, sha3_256Bytes);
-
-
-        Span<byte> hashCoinbaseBytes = stackalloc byte[32];
-        shareHasher.Digest(ComputeCoinbase(prePowHashBytes, sha3_256Bytes), hashCoinbaseBytes);
-
-        var targetHashCoinbaseBytes = new Target(new BigInteger(hashCoinbaseBytes.ToNewReverseArray(), true, true));
-        var hashCoinbaseBytesValue = targetHashCoinbaseBytes.ToUInt256();
-        //throw new StratumException(StratumError.LowDifficultyShare, $"nonce: {nonce} ||| hashCoinbaseBytes: {hashCoinbaseBytes.ToHexString()} ||| BigInteger: {targetHashCoinbaseBytes.ToBigInteger()} ||| Target: {hashCoinbaseBytesValue} - [stratum: {KaspaUtils.DifficultyToTarget(context.Difficulty)} - blockTemplate: {blockTargetValue}] ||| BigToCompact: {KaspaUtils.BigToCompact(targetHashCoinbaseBytes.ToBigInteger())} - [stratum: {KaspaUtils.BigToCompact(KaspaUtils.DifficultyToTarget(context.Difficulty))} - blockTemplate: {BlockTemplate.Header.Bits}] ||| shareDiff: {(double) new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier} - [stratum: {context.Difficulty} - blockTemplate: {KaspaUtils.TargetToDifficulty(KaspaUtils.CompactToBig(BlockTemplate.Header.Bits)) * (double) KaspaConstants.MinHash}]");
-
-        // calc share-diff
-        var shareDiff = (double) new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier;
-
-        // diff check
-        var stratumDifficulty = context.Difficulty;
-        var ratio = shareDiff / stratumDifficulty;
-
-        // check if the share meets the much harder block difficulty (block candidate)
-        var isBlockCandidate = hashCoinbaseBytesValue <= blockTargetValue;
-        //var isBlockCandidate = true;
-
-        // test if share meets at least workers current difficulty
-        if(!isBlockCandidate && ratio < 0.99)
-        {
-            // check if share matched the previous difficulty from before a vardiff retarget
-            if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
-            {
-                ratio = shareDiff / context.PreviousDifficulty.Value;
-
-                if(ratio < 0.99)
-                    throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
-
-                // use previous difficulty
-                stratumDifficulty = context.PreviousDifficulty.Value;
-            }
-
-            else
-                throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
-        }
-
-        var result = new Share
-        {
-            BlockHeight = (long) BlockTemplate.Header.DaaScore,
-            NetworkDifficulty = Difficulty,
-            Difficulty = context.Difficulty / shareMultiplier
-        };
-
-        if(isBlockCandidate)
-        {
-            var hashBytes = SerializeHeader(BlockTemplate.Header, false);
-
-            result.IsBlockCandidate = true;
-            result.BlockHash = hashBytes.ToHexString();
-        }
-
-        return result;
-    }
-
-    */
-
-    // Helpers
 
     // Octonion
     public static void OctonionMultiply(long[] a, long[] b, long[] result)
@@ -756,7 +681,7 @@ public class CryptixJob : KaspaJob
             result[i] = res[i];
         }
     }
-
+    
       public static void OctonionHash(byte[] inputHash, long[] oct)
     {
         for (int i = 0; i < 8; i++)
@@ -781,6 +706,9 @@ public class CryptixJob : KaspaJob
             }
         }
     }
+
+    // Helpers
+
     public static long WrappingAdd(long a, long b)
     {
         unchecked
