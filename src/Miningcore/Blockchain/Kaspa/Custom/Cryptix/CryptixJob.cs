@@ -491,7 +491,7 @@ public class CryptixJob : KaspaJob
         // Check if the miner is submitting too many shares in a short time
         if (DateTime.Now - _lastShareTime < TimeSpan.FromSeconds(1.0 / MaxSharesPerSecond))
         {
-            throw new StratumException(StratumError.LowDifficultyShare, "Spam - too many shares in a short time");
+            throw new StratumException(StratumError.LowDifficultyShare, "Nonce Spam Share detected. To much Requests.");
         }
 
         // Update the last share time
@@ -506,7 +506,7 @@ public class CryptixJob : KaspaJob
         // Check if the share already exists (block duplicates)
         if (_userShares.Contains(shareIdentifier))
         {
-            throw new StratumException(StratumError.LowDifficultyShare, "Spam share detected. This share has already been submitted.");
+            throw new StratumException(StratumError.LowDifficultyShare, "Nonce Spam Share detected. This share has already been submitted.");
         }
 
         // Add share to history
@@ -540,7 +540,7 @@ public class CryptixJob : KaspaJob
         {
             if (hashCoinbaseBytesValue <= blockTargetValue)
             {
-                throw new StratumException(StratumError.LowDifficultyShare, $"fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
+                throw new StratumException(StratumError.LowDifficultyShare, $"Fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
             }
 
             if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
@@ -549,14 +549,14 @@ public class CryptixJob : KaspaJob
 
                 if (ratio > MAX_RATIO)
                 {
-                    throw new StratumException(StratumError.LowDifficultyShare, $"fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
+                    throw new StratumException(StratumError.LowDifficultyShare, $"Fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
                 }
 
                 stratumDifficulty = context.PreviousDifficulty.Value;
             }
             else
             {
-                throw new StratumException(StratumError.LowDifficultyShare, $"fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
+                throw new StratumException(StratumError.LowDifficultyShare, $"Fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
             }
         }
 
