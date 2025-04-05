@@ -17,26 +17,22 @@ namespace Miningcore.Blockchain.Kaspa.Custom.Cryptix;
 public class CryptixJob : KaspaJob
 {
 
-    /* // DIFF CHECK NONCE SPAM
+    // Share Spam
 
-    // Difficulty fluctuations
-    private decimal lastDifficulty = 0;  
-    private DateTime lastDifficultyChangeTime = DateTime.MinValue;
-    private static readonly Dictionary<string, List<string>> workerNonces = new();
+    // Shares per Second
+    private DateTime _lastShareTime = DateTime.MinValue; 
 
-    // Nonce Spam similar Nonces
-    private const int nonceHistorySize = 100; // Number of last nonces for comparison
-    private const double nonceSimilarityThreshold = 0.7; // Threshold - 70% similar
+    private const int MaxSharesPerSecond = 2; // 2 Shares per Second allowed
 
-    // Nonce Spam maximum Nonces
-    // Maximum accepted difficulty (10x the current one)
-    decimal maxAcceptedDiffMultiplier = 10m; 
-    decimal maxAcceptedDifficulty = stratumDifficulty * maxAcceptedDiffMultiplier;
+    // Share Values Check
+    private HashSet<string> _userShares = new HashSet<string>();
+    private const int MaxStoredShares = 100; // Safe last 100 Shares for comparing
 
-    */
-
+    // Hashers
     protected Blake3 blake3Hasher;
     protected Sha3_256 sha3_256Hasher;
+
+    private static HashSet<string> AcceptedHashes = new HashSet<string>();
 
     public CryptixJob(IHashAlgorithm customBlockHeaderHasher, IHashAlgorithm customCoinbaseHasher, IHashAlgorithm customShareHasher)
         : base(customBlockHeaderHasher, customCoinbaseHasher, customShareHasher)
@@ -48,8 +44,8 @@ public class CryptixJob : KaspaJob
 
     protected override Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
     {
-        byte[] sha3Hash = new byte[data.Length];
-        data.CopyTo(sha3Hash);
+        byte[] sha3Hash = new byte[32];
+        data.Slice(0, 32).CopyTo(sha3Hash);
 
         ushort[][] matrix = GenerateMatrix(prePowHash);
 
@@ -152,98 +148,115 @@ public class CryptixJob : KaspaJob
             
             product[i] ^= oct_value_u8;
         }
-            
+                    
         // **Non-Linear S-Box**
         byte[] sbox = new byte[256];
 
-        for (int i = 0; i < 256; i++) {
+        for (int i = 0; i < 256; i++)
+        {
             byte i_u8 = (byte)i;
-
+            
             byte[] sourceArray;
             byte rotateLeftVal, rotateRightVal;
 
-            if (i_u8 < 16) {
+            if (i_u8 < 16)
+            {
                 sourceArray = product;
                 rotateLeftVal = (byte)((nibbleProduct[3] ^ 0x4F) * 3 % 256);
                 rotateRightVal = (byte)((sha3Hash[2] ^ 0xD3) * 5 % 256);
             }
-            else if (i_u8 < 32) {
+            else if (i_u8 < 32)
+            {
                 sourceArray = sha3Hash;
                 rotateLeftVal = (byte)((product[7] ^ 0xA6) * 2 % 256);
                 rotateRightVal = (byte)((nibbleProduct[5] ^ 0x5B) * 7 % 256);
             }
-            else if (i_u8 < 48) {
+            else if (i_u8 < 48)
+            {
                 sourceArray = nibbleProduct;
                 rotateLeftVal = (byte)((productBeforeOct[1] ^ 0x9C) * 9 % 256);
                 rotateRightVal = (byte)((product[0] ^ 0x8E) * 3 % 256);
             }
-            else if (i_u8 < 64) {
+            else if (i_u8 < 64)
+            {
                 sourceArray = sha3Hash;
                 rotateLeftVal = (byte)((product[6] ^ 0x71) * 4 % 256);
                 rotateRightVal = (byte)((productBeforeOct[3] ^ 0x2F) * 5 % 256);
             }
-            else if (i_u8 < 80) {
+            else if (i_u8 < 80)
+            {
                 sourceArray = productBeforeOct;
                 rotateLeftVal = (byte)((nibbleProduct[4] ^ 0xB2) * 3 % 256);
                 rotateRightVal = (byte)((sha3Hash[7] ^ 0x6D) * 7 % 256);
             }
-            else if (i_u8 < 96) {
+            else if (i_u8 < 96)
+            {
                 sourceArray = sha3Hash;
                 rotateLeftVal = (byte)((product[0] ^ 0x58) * 6 % 256);
                 rotateRightVal = (byte)((nibbleProduct[1] ^ 0xEE) * 9 % 256);
             }
-            else if (i_u8 < 112) {
+            else if (i_u8 < 112)
+            {
                 sourceArray = product;
                 rotateLeftVal = (byte)((productBeforeOct[2] ^ 0x37) * 2 % 256);
                 rotateRightVal = (byte)((sha3Hash[6] ^ 0x44) * 6 % 256);
             }
-            else if (i_u8 < 128) {
+            else if (i_u8 < 128)
+            {
                 sourceArray = sha3Hash;
                 rotateLeftVal = (byte)((product[5] ^ 0x1A) * 5 % 256);
                 rotateRightVal = (byte)((sha3Hash[4] ^ 0x7C) * 8 % 256);
             }
-            else if (i_u8 < 144) {
+            else if (i_u8 < 144)
+            {
                 sourceArray = productBeforeOct;
                 rotateLeftVal = (byte)((nibbleProduct[3] ^ 0x93) * 7 % 256);
                 rotateRightVal = (byte)((product[2] ^ 0xAF) * 3 % 256);
             }
-            else if (i_u8 < 160) {
+            else if (i_u8 < 160)
+            {
                 sourceArray = sha3Hash;
                 rotateLeftVal = (byte)((product[7] ^ 0x29) * 9 % 256);
                 rotateRightVal = (byte)((nibbleProduct[5] ^ 0xDC) * 2 % 256);
             }
-            else if (i_u8 < 176) {
+            else if (i_u8 < 176)
+            {
                 sourceArray = nibbleProduct;
                 rotateLeftVal = (byte)((productBeforeOct[1] ^ 0x4E) * 4 % 256);
                 rotateRightVal = (byte)((sha3Hash[0] ^ 0x8B) * 3 % 256);
             }
-            else if (i_u8 < 192) {
+            else if (i_u8 < 192)
+            {
                 sourceArray = sha3Hash;
                 rotateLeftVal = (byte)((nibbleProduct[6] ^ 0xF3) * 5 % 256);
                 rotateRightVal = (byte)((productBeforeOct[3] ^ 0x62) * 8 % 256);
             }
-            else if (i_u8 < 208) {
+            else if (i_u8 < 208)
+            {
                 sourceArray = productBeforeOct;
                 rotateLeftVal = (byte)((product[4] ^ 0xB7) * 6 % 256);
                 rotateRightVal = (byte)((product[7] ^ 0x15) * 2 % 256);
             }
-            else if (i_u8 < 224) {
+            else if (i_u8 < 224)
+            {
                 sourceArray = sha3Hash;
                 rotateLeftVal = (byte)((product[0] ^ 0x2D) * 8 % 256);
                 rotateRightVal = (byte)((productBeforeOct[1] ^ 0xC8) * 7 % 256);
             }
-            else if (i_u8 < 240) {
+            else if (i_u8 < 240)
+            {
                 sourceArray = product;
                 rotateLeftVal = (byte)((productBeforeOct[2] ^ 0x6F) * 3 % 256);
                 rotateRightVal = (byte)((nibbleProduct[6] ^ 0x99) * 9 % 256);
             }
-            else {
+            else
+            {
                 sourceArray = sha3Hash;
                 rotateLeftVal = (byte)((nibbleProduct[5] ^ 0xE1) * 7 % 256);
                 rotateRightVal = (byte)((sha3Hash[4] ^ 0x3B) * 5 % 256);
             }
 
-            byte value =
+            byte value = 
                 (i_u8 < 16) ? (byte)((product[i_u8 % 32] * 0x03 + i_u8 * 0xAA) & 0xFF) :
                 (i_u8 < 32) ? (byte)((sha3Hash[(i_u8 - 16) % 32] * 0x05 + (i_u8 - 16) * 0xBB) & 0xFF) :
                 (i_u8 < 48) ? (byte)((productBeforeOct[(i_u8 - 32) % 32] * 0x07 + (i_u8 - 32) * 0xCC) & 0xFF) :
@@ -260,7 +273,7 @@ public class CryptixJob : KaspaJob
                 (i_u8 < 224) ? (byte)((sha3Hash[(i_u8 - 208) % 32] * 0x31 + (i_u8 - 208) * 0x88) & 0xFF) :
                 (i_u8 < 240) ? (byte)((productBeforeOct[(i_u8 - 224) % 32] * 0x37 + (i_u8 - 224) * 0x99) & 0xFF) :
                             (byte)((nibbleProduct[(i_u8 - 240) % 32] * 0x3F + (i_u8 - 240) * 0xAA) & 0xFF);
-
+                            
             int rotateLeftShift = (product[(i + 1) % 32] + i) % 8;
             int rotateRightShift = (sha3Hash[(i + 2) % 32] + i) % 8;
 
@@ -270,12 +283,13 @@ public class CryptixJob : KaspaJob
             rotationLeft &= 0xFF;
             rotationRight &= 0xFF;
 
-            int index_sbox = (i + rotationLeft + rotationRight) % 32;
-            sbox[i] = (byte)(sourceArray[index_sbox] ^ value);
+            int index = (i + rotationLeft + rotationRight) % 32;
+            
+            sbox[i] = (byte)(sourceArray[index] ^ value);
         }
 
         // Update Sbox Values
-        int index_update = (productBeforeOct[2] % 8) + 1;  
+        int index_update = (productBeforeOct[2] % 8) + 1;
         int iterations = 1 + (product[index_update] % 2);
 
         for (int j = 0; j < iterations; j++) {
@@ -284,14 +298,17 @@ public class CryptixJob : KaspaJob
             for (int i = 0; i < 256; i++) {
                 byte value = temp_sbox[i];
 
-                int rotate_left_shift = (product[(i + 1) % product.Length] + i + (i * 3)) % 8;
-                int rotate_right_shift = (sha3Hash[(i + 2) % sha3Hash.Length] + i + (i * 5)) % 8;
+                byte rotate_left_shift = (byte)((product[(i + 1) % product.Length] + i + (i * 3)) % 8);
+                byte rotate_right_shift = (byte)((sha3Hash[(i + 2) % sha3Hash.Length] + i + (i * 5)) % 8);
 
-                byte rotated_value = (byte)((value << rotate_left_shift) | (value >> (8 - rotate_left_shift)));
-                rotated_value |= (byte)((value >> rotate_right_shift) | (value << (8 - rotate_right_shift)));
+                byte rotated_value = RotateLeftu8(value, rotate_left_shift);
+                rotated_value |= RotateRightu8(value, rotate_right_shift);
 
-                byte xor_value = (byte)(((i + product[(i * 3) % product.Length] ^ sha3Hash[(i * 7) % sha3Hash.Length]) ^ 0xA5) << (i % 8));
-                xor_value ^= 0x55;
+                byte base_value = (byte)((i + (product[(i * 3) % product.Length] ^ sha3Hash[(i * 7) % sha3Hash.Length])) & 0xFF);
+                base_value ^= 0xA5;
+
+                byte shifted_value = RotateLeftu8(base_value, (byte)(i % 8));
+                byte xor_value = (byte)(shifted_value ^ 0x55);
 
                 value ^= rotated_value;
                 value ^= xor_value;
@@ -300,9 +317,8 @@ public class CryptixJob : KaspaJob
             }
 
             sbox = (byte[])temp_sbox.Clone();
-        } 
-
-        /*
+        }
+    
         // Blake3 Chaining
         int index_blake = (productBeforeOct[5] % 8) + 1;  
         int iterations_blake = 1 + (product[index_blake] % 3);
@@ -314,9 +330,7 @@ public class CryptixJob : KaspaJob
             // BLAKE3 Hashing
             blake3Hasher.Digest(b3_hash_array, output);
             b3_hash_array = output.ToArray();
-        }
-        */
-        
+        }  
 
         // Apply S-Box to the product with XOR
         for (int i = 0; i < 32; i++) {
@@ -329,13 +343,15 @@ public class CryptixJob : KaspaJob
 
             int byte_val = ref_array[(i * 13) % ref_array.Length];
 
-            int index_end = (byte_val + product[(i * 31) % product.Length] + sha3Hash[(i * 19) % sha3Hash.Length] + i * 41) % 256;  
-            product[i] ^= sbox[index_end]; 
+            int index_end = (byte_val + product[(i * 31) % product.Length] 
+                            + sha3Hash[(i * 19) % sha3Hash.Length] 
+                            + i * 41) % 256;
+
+            b3_hash_array[i] ^= sbox[index_end]; 
         }
-        
 
         // return
-        return new Span<byte>(product);
+        return new Span<byte>(b3_hash_array);
     }
     
 
@@ -462,101 +478,89 @@ public class CryptixJob : KaspaJob
         var hashCoinbaseBytesValue = targetHashCoinbaseBytes.ToUInt256();
         //throw new StratumException(StratumError.LowDifficultyShare, $"nonce: {nonce} ||| hashCoinbaseBytes: {hashCoinbaseBytes.ToHexString()} ||| BigInteger: {targetHashCoinbaseBytes.ToBigInteger()} ||| Target: {hashCoinbaseBytesValue} - [stratum: {KaspaUtils.DifficultyToTarget(context.Difficulty)} - blockTemplate: {blockTargetValue}] ||| BigToCompact: {KaspaUtils.BigToCompact(targetHashCoinbaseBytes.ToBigInteger())} - [stratum: {KaspaUtils.BigToCompact(KaspaUtils.DifficultyToTarget(context.Difficulty))} - blockTemplate: {BlockTemplate.Header.Bits}] ||| shareDiff: {(double) new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier} - [stratum: {context.Difficulty} - blockTemplate: {KaspaUtils.TargetToDifficulty(KaspaUtils.CompactToBig(BlockTemplate.Header.Bits)) * (double) KaspaConstants.MinHash}]");
 
-        // calc share-diff
-        var shareDiff = (double) new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier;
+        // Calculate shareDiff
+        var shareDiff = (double)new BigRational(KaspaConstants.Diff1b, targetHashCoinbaseBytes.ToBigInteger()) * shareMultiplier;
 
-        // diff check
+        // Difficulty check
         var stratumDifficulty = context.Difficulty;
         var ratio = shareDiff / stratumDifficulty;
 
-        /*
-        // ### START DIFF CHECK and ANTI NONCE SPAM
-
-        // # Check Similar Nonces
-
-        // If the worker does not have an entry yet, initialize
-        if (!workerNonces.ContainsKey(worker.ConnectionId))
-            workerNonces[worker.ConnectionId] = new List<string>();
-
-        var nonceList = workerNonces[worker.ConnectionId];
-
-        // If too many nonces with the same prefix occur → suspected spam
-        if (nonceList.Count(n => n.StartsWith(nonce.Substring(0, 4))) > nonceHistorySize * nonceSimilarityThreshold)
-        {
-            throw new StratumException(StratumError.InvalidShare, "Suspicious Nonce pattern detected (possible spam)");
-        }
-
-        // Add nonce to history
-        nonceList.Add(nonce);
-
-        // Remove oldest nonces
-        if (nonceList.Count > nonceHistorySize)
-            nonceList.RemoveAt(0);
-        
-        // # Check Difficulty fluctuations
-
-        // Monitoring difficulty fluctuations
-        decimal maxDifficultyDelta = 1000m; // Maximum allowed change in difficulty (upwards)
-        decimal minDifficultyDelta = 0.0001m; // Minimum allowed change in difficulty
-        DateTime currentTime = DateTime.UtcNow;
-        
-        // Calculate the time span between difficulty changes
-        var timeDifference = currentTime - lastDifficultyChangeTime;
-
-        // Check if the difficulty fluctuates too quickly
-        if (lastDifficulty != 0 && timeDifference.TotalSeconds < 30)  // 30 seconds
-        {
-            // Checking the maximum difficulty variation
-            if (Math.Abs(stratumDifficulty - lastDifficulty) > maxDifficultyDelta)
-            {
-                throw new StratumException(StratumError.InvalidShare, "Unrealistic difficulty fluctuation detected (too high change)");
-            }
-
-            // Checking the minimum difficulty variation
-            if (Math.Abs(stratumDifficulty - lastDifficulty) < minDifficultyDelta)
-            {
-                throw new StratumException(StratumError.InvalidShare, "Unrealistic difficulty fluctuation detected (too low change)");
-            }
-        }
-
-        // Update the last difficulty and time
-        lastDifficulty = stratumDifficulty;
-        lastDifficultyChangeTime = currentTime;
-
-        // ###  DIFF CHECK and ANTI NONCE SPAM
-        */
-
-        // check if the share meets the much harder block difficulty (block candidate)
+        // Check if the share satisfies the block difficulty (Block candidate)
         var isBlockCandidate = hashCoinbaseBytesValue <= blockTargetValue;
-        //var isBlockCandidate = true;
 
-        // test if share meets at least workers current difficulty
-        if(!isBlockCandidate && ratio < 0.99)
+        // Check if the miner is submitting too many shares in a short time
+        if (DateTime.Now - _lastShareTime < TimeSpan.FromSeconds(1.0 / MaxSharesPerSecond))
         {
-            // check if share matched the previous difficulty from before a vardiff retarget
-            if(context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+            throw new StratumException(StratumError.LowDifficultyShare, "Spam - too many shares in a short time");
+        }
+
+        // Update the last share time
+        _lastShareTime = DateTime.Now;
+
+        // Convert uint256 to byte array
+        byte[] byteArray = hashCoinbaseBytesValue.ToBytes();
+
+        // Convert byte array to hex string
+        string shareIdentifier = BitConverter.ToString(byteArray).Replace("-", "").ToLower();
+
+        // Check if the share already exists (block duplicates)
+        if (_userShares.Contains(shareIdentifier))
+        {
+            throw new StratumException(StratumError.LowDifficultyShare, "Spam share detected. This share has already been submitted.");
+        }
+
+        // Add share to history
+        if (_userShares.Count >= MaxStoredShares)
+        {
+            _userShares.Remove(_userShares.First());
+        }
+
+        _userShares.Add(shareIdentifier);
+
+        // If the ratio is too low (< 0.99), it's too easy
+        if (!isBlockCandidate && ratio < 0.99)
+        {
+            if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
             {
                 ratio = shareDiff / context.PreviousDifficulty.Value;
 
-                if(ratio < 0.99)
+                if (ratio < 0.99)
                     throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
 
-                // use previous difficulty
                 stratumDifficulty = context.PreviousDifficulty.Value;
             }
-
             else
+            {
                 throw new StratumException(StratumError.LowDifficultyShare, $"low difficulty share ({shareDiff})");
+            }
         }
-        
-        /*
-        // Upper limit: Block extreme difficulty shares (fake high diff)
-        if (shareDiff > maxAcceptedDifficulty)
-        {
-            throw new StratumException(StratumError.InvalidShare, $"unrealistic high difficulty share detected ({shareDiff})");
-        }
-        */
 
+        const double MAX_RATIO = 10000;  // MAX RATIO FOR HIGH SHARES
+        if (!isBlockCandidate && ratio > MAX_RATIO)
+        {
+            if (hashCoinbaseBytesValue <= blockTargetValue)
+            {
+                throw new StratumException(StratumError.LowDifficultyShare, $"fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
+            }
+
+            if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
+            {
+                ratio = shareDiff / context.PreviousDifficulty.Value;
+
+                if (ratio > MAX_RATIO)
+                {
+                    throw new StratumException(StratumError.LowDifficultyShare, $"fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
+                }
+
+                stratumDifficulty = context.PreviousDifficulty.Value;
+            }
+            else
+            {
+                throw new StratumException(StratumError.LowDifficultyShare, $"fake high difficulty share (ratio: {ratio}, shareDiff: {shareDiff})");
+            }
+        }
+
+        // Create the result object
         var result = new Share
         {
             BlockHeight = (long) BlockTemplate.Header.DaaScore,
@@ -573,6 +577,7 @@ public class CryptixJob : KaspaJob
         }
 
         return result;
+
     }
 
     // Helpers Rotate
@@ -808,6 +813,15 @@ public class CryptixJob : KaspaJob
     public static byte WrappingMul8(byte a, byte b)
     {
         return (byte)((a * b) & 0xFF);
+    }
+
+    byte RotateLeftu8(byte value, byte shift) {
+        return (byte)((value << shift) | (value >> (8 - shift)));
+    }
+
+
+    byte RotateRightu8(byte value, byte shift) {
+        return (byte)((value >> shift) | (value << (8 - shift)));
     }
 
     /*
