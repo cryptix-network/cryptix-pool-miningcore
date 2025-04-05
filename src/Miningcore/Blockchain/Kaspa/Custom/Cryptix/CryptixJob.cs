@@ -535,7 +535,7 @@ public class CryptixJob : KaspaJob
             }
         }
 
-        const double MAX_RATIO = 999999999;  // MAX RATIO FOR HIGH SHARES
+        const double MAX_RATIO = 99999999999;  // MAX RATIO FOR HIGH SHARES
         if (!isBlockCandidate && ratio > MAX_RATIO)
         {
             if (hashCoinbaseBytesValue <= blockTargetValue)
