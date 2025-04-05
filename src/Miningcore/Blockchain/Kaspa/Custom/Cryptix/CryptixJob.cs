@@ -539,7 +539,7 @@ public class CryptixJob : KaspaJob
         // ---------------------------
 
         // Min Diff
-        if (!isBlockCandidate && ratio < 0.99 && isHighDiffEnabled)
+        if (!isBlockCandidate && ratio < 0.99 )
         {
             if (context.VarDiff?.LastUpdate != null && context.PreviousDifficulty.HasValue)
             {
