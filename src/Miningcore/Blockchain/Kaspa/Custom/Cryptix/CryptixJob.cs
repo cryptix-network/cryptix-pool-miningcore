@@ -48,7 +48,6 @@ public class CryptixJob : KaspaJob
 
     protected override Span<byte> ComputeCoinbase(Span<byte> prePowHash, Span<byte> data)
     {
-
         byte[] sha3Hash = new byte[data.Length];
         data.CopyTo(sha3Hash);
 
@@ -62,66 +61,84 @@ public class CryptixJob : KaspaJob
             nibbles[2 * i + 1] = (byte)(data[i] & 0x0F);
         }
 
-        // Product-Arrays
         byte[] product = new byte[32];
         byte[] nibbleProduct = new byte[32];
 
         for (int i = 0; i < 32; i++)
         {
             uint sum1 = 0, sum2 = 0, sum3 = 0, sum4 = 0;
-            
-            // Matrix Multiplication
+
             for (int j = 0; j < 64; j++)
             {
                 uint elem = nibbles[j];
-                sum1 += (uint)(matrix[2 * i][j] * elem);
-                sum2 += (uint)(matrix[2 * i + 1][j] * elem);
-                sum3 += (uint)(matrix[1 * i + 2][j] * elem);
-                sum4 += (uint)(matrix[1 * i + 3][j] * elem);
+                sum1 += ((uint)matrix[2 * i][j]) * elem;
+                sum2 += ((uint)matrix[2 * i + 1][j]) * elem;
+                sum3 += ((uint)matrix[i + 2][j]) * elem;
+                sum4 += ((uint)matrix[i + 3][j]) * elem;
             }
 
+            // Rotate helpers
+            static uint RotateLeft(uint value, int bits) => (value << bits) | (value >> (32 - bits));
+            static uint RotateRight(uint value, int bits) => (value >> bits) | (value << (32 - bits));
+
             // A Nibble
-            byte aNibble = (byte)((sum1 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum3 >> 8) & 0xF)
+            byte aNibble = (byte)(
+                (sum1 & 0xF)
+                ^ ((sum2 >> 4) & 0xF)
+                ^ ((sum3 >> 8) & 0xF)
                 ^ ((sum1 * 0xABCD >> 12) & 0xF)
                 ^ ((sum1 * 0x1234 >> 8) & 0xF)
                 ^ ((sum2 * 0x5678 >> 16) & 0xF)
                 ^ ((sum3 * 0x9ABC >> 4) & 0xF)
-                ^ ((sum1 << 3 & 0xF) ^ (sum3 >> 5 & 0xF)));
+                ^ ((RotateLeft(sum1, 3) & 0xF) ^ (RotateRight(sum3, 5) & 0xF))
+            );
 
             // B Nibble
-            byte bNibble = (byte)((sum2 & 0xF) ^ ((sum1 >> 4) & 0xF) ^ ((sum4 >> 8) & 0xF)
+            byte bNibble = (byte)(
+                (sum2 & 0xF)
+                ^ ((sum1 >> 4) & 0xF)
+                ^ ((sum4 >> 8) & 0xF)
                 ^ ((sum2 * 0xDCBA >> 14) & 0xF)
                 ^ ((sum2 * 0x8765 >> 10) & 0xF)
                 ^ ((sum1 * 0x4321 >> 6) & 0xF)
-                ^ ((sum4 << 2 ^ sum1 >> 1) & 0xF));
+                ^ ((RotateLeft(sum4, 2) ^ RotateRight(sum1, 1)) & 0xF)
+            );
 
             // C Nibble
-            byte cNibble = (byte)((sum3 & 0xF) ^ ((sum2 >> 4) & 0xF) ^ ((sum2 >> 8) & 0xF)
+            byte cNibble = (byte)(
+                (sum3 & 0xF)
+                ^ ((sum2 >> 4) & 0xF)
+                ^ ((sum2 >> 8) & 0xF)
                 ^ ((sum3 * 0xF135 >> 10) & 0xF)
                 ^ ((sum3 * 0x2468 >> 12) & 0xF)
                 ^ ((sum4 * 0xACEF >> 8) & 0xF)
                 ^ ((sum2 * 0x1357 >> 4) & 0xF)
-                ^ ((sum3 << 5 & 0xF) ^ (sum1 >> 7 & 0xF)));
+                ^ ((RotateLeft(sum3, 5) & 0xF) ^ (RotateRight(sum1, 7) & 0xF))
+            );
 
             // D Nibble
-            byte dNibble = (byte)((sum1 & 0xF) ^ ((sum4 >> 4) & 0xF) ^ ((sum1 >> 8) & 0xF)
+            byte dNibble = (byte)(
+                (sum1 & 0xF)
+                ^ ((sum4 >> 4) & 0xF)
+                ^ ((sum1 >> 8) & 0xF)
                 ^ ((sum4 * 0x57A3 >> 6) & 0xF)
                 ^ ((sum3 * 0xD4E3 >> 12) & 0xF)
                 ^ ((sum1 * 0x9F8B >> 10) & 0xF)
-                ^ ((sum4 << 4 ^ (sum1 + sum2)) & 0xF));
+                ^ ((RotateLeft(sum4, 4) ^ (sum1 + sum2)) & 0xF)
+            );
 
-            // Combine into final products
             nibbleProduct[i] = (byte)((cNibble << 4) | dNibble);
             product[i] = (byte)((aNibble << 4) | bNibble);
         }
 
-        // XOR with original data
+        // Final XOR
         for (int i = 0; i < 32; i++)
         {
             product[i] ^= data[i];
             nibbleProduct[i] ^= data[i];
         }
 
+        
         byte[] productBeforeOct = (byte[])product.Clone();
 
         // ** Octonion **
@@ -135,7 +152,7 @@ public class CryptixJob : KaspaJob
             
             product[i] ^= oct_value_u8;
         }
-
+            
         // **Non-Linear S-Box**
         byte[] sbox = new byte[256];
 
@@ -283,8 +300,9 @@ public class CryptixJob : KaspaJob
             }
 
             sbox = (byte[])temp_sbox.Clone();
-        }
+        } 
 
+        /*
         // Blake3 Chaining
         int index_blake = (productBeforeOct[5] % 8) + 1;  
         int iterations_blake = 1 + (product[index_blake] % 3);
@@ -297,6 +315,8 @@ public class CryptixJob : KaspaJob
             blake3Hasher.Digest(b3_hash_array, output);
             b3_hash_array = output.ToArray();
         }
+        */
+        
 
         // Apply S-Box to the product with XOR
         for (int i = 0; i < 32; i++) {
@@ -310,12 +330,14 @@ public class CryptixJob : KaspaJob
             int byte_val = ref_array[(i * 13) % ref_array.Length];
 
             int index_end = (byte_val + product[(i * 31) % product.Length] + sha3Hash[(i * 19) % sha3Hash.Length] + i * 41) % 256;  
-            b3_hash_array[i] ^= sbox[index_end]; 
+            product[i] ^= sbox[index_end]; 
         }
+        
 
         // return
-        return new Span<byte>(b3_hash_array);
+        return new Span<byte>(product);
     }
+    
 
  protected override Share ProcessShareInternal(StratumConnection worker, string nonce)
     {
@@ -326,13 +348,6 @@ public class CryptixJob : KaspaJob
         var prePowHashBytes = SerializeHeader(BlockTemplate.Header, true);
         var coinbaseBytes = SerializeCoinbase(prePowHashBytes, BlockTemplate.Header.Timestamp, BlockTemplate.Header.Nonce);
 
-        /*
-        // Old Sha3
-        Span<byte> sha3_256Bytes = stackalloc byte[32];
-        sha3_256Hasher.Digest(coinbaseBytes, sha3_256Bytes);
-        */
-
-        // New Functions
         Span<byte> sha3_hash = stackalloc byte[32];
         coinbaseBytes.CopyTo(sha3_hash);
 
@@ -646,53 +661,90 @@ public class CryptixJob : KaspaJob
 
     // Helpers
 
-    public static byte WrappingAdd8(byte a, byte b)
-    {
-        return (byte)((a + b) & 0xFF);
-    }
-
-    public static byte WrappingMul8(byte a, byte b)
-    {
-        return (byte)((a * b) & 0xFF);
-    }
-
-    public static long WrappingMul(long a, long b)
-    {
-        long low = (a & 0xFFFFFFFF) * (b & 0xFFFFFFFF);
-        long high = (a >> 32) * (b >> 32) + ((a & 0xFFFFFFFF) * (b >> 32) >> 32) + ((a >> 32) * (b & 0xFFFFFFFF) >> 32);
-
-        return low;
-    }
-
     // Octonion
     public static void OctonionMultiply(long[] a, long[] b, long[] result)
     {
         long[] res = new long[8];
 
+    // e0
+    res[0] = WrappingMul(a[0], b[0])
+            .WrappingSub(WrappingMul(a[1], b[1]))
+            .WrappingSub(WrappingMul(a[2], b[2]))
+            .WrappingSub(WrappingMul(a[3], b[3]))
+            .WrappingSub(WrappingMul(a[4], b[4]))
+            .WrappingSub(WrappingMul(a[5], b[5]))
+            .WrappingSub(WrappingMul(a[6], b[6]))
+            .WrappingSub(WrappingMul(a[7], b[7]));
 
-        res[0] = WrappingMul(a[0], b[0]) - WrappingMul(a[1], b[1]) - WrappingMul(a[2], b[2]) - WrappingMul(a[3], b[3]) 
-                - WrappingMul(a[4], b[4]) - WrappingMul(a[5], b[5]) - WrappingMul(a[6], b[6]) - WrappingMul(a[7], b[7]);
+    // e1
+    res[1] = WrappingMul(a[0], b[1])
+            .WrappingAdd(WrappingMul(a[1], b[0]))
+            .WrappingAdd(WrappingMul(a[2], b[3]))
+            .WrappingSub(WrappingMul(a[3], b[2]))
+            .WrappingAdd(WrappingMul(a[4], b[5]))
+            .WrappingSub(WrappingMul(a[5], b[4]))
+            .WrappingSub(WrappingMul(a[6], b[7]))
+            .WrappingAdd(WrappingMul(a[7], b[6]));
 
-        res[1] = WrappingMul(a[0], b[1]) + WrappingMul(a[1], b[0]) + WrappingMul(a[2], b[3]) - WrappingMul(a[3], b[2]) 
-                + WrappingMul(a[4], b[5]) - WrappingMul(a[5], b[4]) - WrappingMul(a[6], b[7]) + WrappingMul(a[7], b[6]);
+    // e2
+    res[2] = WrappingMul(a[0], b[2])
+            .WrappingSub(WrappingMul(a[1], b[3]))
+            .WrappingAdd(WrappingMul(a[2], b[0]))
+            .WrappingAdd(WrappingMul(a[3], b[1]))
+            .WrappingAdd(WrappingMul(a[4], b[6]))
+            .WrappingSub(WrappingMul(a[5], b[7]))
+            .WrappingAdd(WrappingMul(a[6], b[4]))
+            .WrappingSub(WrappingMul(a[7], b[5]));
 
-        res[2] = WrappingMul(a[0], b[2]) - WrappingMul(a[1], b[3]) + WrappingMul(a[2], b[0]) + WrappingMul(a[3], b[1]) 
-                + WrappingMul(a[4], b[6]) - WrappingMul(a[5], b[7]) + WrappingMul(a[6], b[4]) - WrappingMul(a[7], b[5]);
+    // e3
+    res[3] = WrappingMul(a[0], b[3])
+            .WrappingAdd(WrappingMul(a[1], b[2]))
+            .WrappingSub(WrappingMul(a[2], b[1]))
+            .WrappingAdd(WrappingMul(a[3], b[0]))
+            .WrappingAdd(WrappingMul(a[4], b[7]))
+            .WrappingAdd(WrappingMul(a[5], b[6]))
+            .WrappingSub(WrappingMul(a[6], b[5]))
+            .WrappingAdd(WrappingMul(a[7], b[4]));
 
-        res[3] = WrappingMul(a[0], b[3]) + WrappingMul(a[1], b[2]) - WrappingMul(a[2], b[1]) + WrappingMul(a[3], b[0]) 
-                + WrappingMul(a[4], b[7]) + WrappingMul(a[5], b[6]) - WrappingMul(a[6], b[5]) + WrappingMul(a[7], b[4]);
+    // e4
+    res[4] = WrappingMul(a[0], b[4])
+            .WrappingSub(WrappingMul(a[1], b[5]))
+            .WrappingSub(WrappingMul(a[2], b[6]))
+            .WrappingSub(WrappingMul(a[3], b[7]))
+            .WrappingAdd(WrappingMul(a[4], b[0]))
+            .WrappingAdd(WrappingMul(a[5], b[1]))
+            .WrappingAdd(WrappingMul(a[6], b[2]))
+            .WrappingAdd(WrappingMul(a[7], b[3]));
 
-        res[4] = WrappingMul(a[0], b[4]) - WrappingMul(a[1], b[5]) - WrappingMul(a[2], b[6]) - WrappingMul(a[3], b[7]) 
-                + WrappingMul(a[4], b[0]) + WrappingMul(a[5], b[1]) + WrappingMul(a[6], b[2]) + WrappingMul(a[7], b[3]);
+    // e5
+    res[5] = WrappingMul(a[0], b[5])
+            .WrappingAdd(WrappingMul(a[1], b[4]))
+            .WrappingSub(WrappingMul(a[2], b[7]))
+            .WrappingAdd(WrappingMul(a[3], b[6]))
+            .WrappingSub(WrappingMul(a[4], b[1]))
+            .WrappingAdd(WrappingMul(a[5], b[0]))
+            .WrappingAdd(WrappingMul(a[6], b[3]))
+            .WrappingAdd(WrappingMul(a[7], b[2]));
 
-        res[5] = WrappingMul(a[0], b[5]) + WrappingMul(a[1], b[4]) - WrappingMul(a[2], b[7]) + WrappingMul(a[3], b[6]) 
-                - WrappingMul(a[4], b[1]) + WrappingMul(a[5], b[0]) + WrappingMul(a[6], b[3]) + WrappingMul(a[7], b[2]);
+    // e6
+    res[6] = WrappingMul(a[0], b[6])
+            .WrappingAdd(WrappingMul(a[1], b[7]))
+            .WrappingAdd(WrappingMul(a[2], b[4]))
+            .WrappingSub(WrappingMul(a[3], b[5]))
+            .WrappingSub(WrappingMul(a[4], b[2]))
+            .WrappingAdd(WrappingMul(a[5], b[3]))
+            .WrappingAdd(WrappingMul(a[6], b[0]))
+            .WrappingAdd(WrappingMul(a[7], b[1]));
 
-        res[6] = WrappingMul(a[0], b[6]) + WrappingMul(a[1], b[7]) + WrappingMul(a[2], b[4]) - WrappingMul(a[3], b[5]) 
-                - WrappingMul(a[4], b[2]) + WrappingMul(a[5], b[3]) + WrappingMul(a[6], b[0]) + WrappingMul(a[7], b[1]);
-
-        res[7] = WrappingMul(a[0], b[7]) - WrappingMul(a[1], b[6]) + WrappingMul(a[2], b[5]) + WrappingMul(a[3], b[4]) 
-                - WrappingMul(a[4], b[3]) + WrappingMul(a[5], b[2]) + WrappingMul(a[6], b[1]) + WrappingMul(a[7], b[0]);
+    // e7
+    res[7] = WrappingMul(a[0], b[7])
+            .WrappingSub(WrappingMul(a[1], b[6]))
+            .WrappingAdd(WrappingMul(a[2], b[5]))
+            .WrappingAdd(WrappingMul(a[3], b[4]))
+            .WrappingSub(WrappingMul(a[4], b[3]))
+            .WrappingAdd(WrappingMul(a[5], b[2]))
+            .WrappingAdd(WrappingMul(a[6], b[1]))
+            .WrappingAdd(WrappingMul(a[7], b[0]));
 
         for (int i = 0; i < 8; i++)
         {
@@ -700,7 +752,7 @@ public class CryptixJob : KaspaJob
         }
     }
 
-    public static void OctonionHash(byte[] inputHash, long[] oct)
+      public static void OctonionHash(byte[] inputHash, long[] oct)
     {
         for (int i = 0; i < 8; i++)
         {
@@ -723,6 +775,39 @@ public class CryptixJob : KaspaJob
                 oct[j] = result[j];
             }
         }
+    }
+    public static long WrappingAdd(long a, long b)
+    {
+        unchecked
+        {
+            return a + b;
+        }
+    }
+
+    public static long WrappingSub(long a, long b)
+    {
+        unchecked
+        {
+            return a - b;
+        }
+    }
+
+    public static long WrappingMul(long a, long b)
+    {
+        unchecked
+        {
+            return a * b;
+        }
+    }
+
+    public static byte WrappingAdd8(byte a, byte b)
+    {
+        return (byte)((a + b) & 0xFF);
+    }
+
+    public static byte WrappingMul8(byte a, byte b)
+    {
+        return (byte)((a * b) & 0xFF);
     }
 
     /*
@@ -825,8 +910,4 @@ public class CryptixJob : KaspaJob
     }
     */
 
-
 }
-
-    
-
