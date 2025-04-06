@@ -319,7 +319,11 @@ public class CryptixJob : KaspaJob
 
             sbox = (byte[])temp_sbox.Clone();
         }
-    
+
+        // Anti FPGA Sidedoor
+         byte[] afterCompProduct = new byte[32];
+        ComputeAfterCompProduct(product, afterCompProduct);
+
         // Blake3 Chaining
         int index_blake = (productBeforeOct[5] % 8) + 1;  
         int iterations_blake = 1 + (product[index_blake] % 3);
@@ -860,8 +864,6 @@ public class CryptixJob : KaspaJob
         }
         return count;
     }
-
-
 }
 public static class OctonionMathExtensions
 {
