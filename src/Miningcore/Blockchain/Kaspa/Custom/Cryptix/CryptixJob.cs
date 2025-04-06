@@ -794,15 +794,7 @@ public class CryptixJob : KaspaJob
         return (a * b) & 0xFFFFFFFF;
     }
 
-    public static uint RotateLeft32(uint value, uint shift)
-    {
-        return (value << (int)shift) | (value >> (32 - (int)shift));
-    }
-
-    public static uint RotateRight32(uint value, uint shift)
-    {
-        return (value >> (int)shift) | (value << (32 - (int)shift));
-    }
+    // Anti FPGA Sidedoor
 
     public static uint ChaoticRandom(uint x)
     {
@@ -870,6 +862,17 @@ public class CryptixJob : KaspaJob
         }
         return count;
     }
+
+    public static uint RotateLeft32(uint value, uint shift)
+    {
+        return (value << (int)shift) | (value >> (32 - (int)shift));
+    }
+
+    public static uint RotateRight32(uint value, uint shift)
+    {
+        return (value >> (int)shift) | (value << (32 - (int)shift));
+    }
+    
 }
 public static class OctonionMathExtensions
 {
