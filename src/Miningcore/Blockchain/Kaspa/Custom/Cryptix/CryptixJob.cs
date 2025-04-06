@@ -128,7 +128,7 @@ public class CryptixJob : KaspaJob
             product[i] = (byte)((aNibble << 4) | bNibble);
         }
 
-        // Final XOR
+        // Final XOR Nibbles
         for (int i = 0; i < 32; i++)
         {
             product[i] ^= data[i];
@@ -360,7 +360,6 @@ public class CryptixJob : KaspaJob
         {
             b3_hash_array[i] ^= afterCompProduct[i];
         }
-
 
         // return
         return new Span<byte>(b3_hash_array);
