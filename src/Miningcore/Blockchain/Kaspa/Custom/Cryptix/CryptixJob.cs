@@ -355,6 +355,13 @@ public class CryptixJob : KaspaJob
             b3_hash_array[i] ^= sbox[index_end]; 
         }
 
+        // Final XOR
+        for (int i = 0; i < 32; i++)
+        {
+            b3_hash_array[i] ^= afterCompProduct[i];
+        }
+
+
         // return
         return new Span<byte>(b3_hash_array);
     }
