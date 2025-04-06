@@ -228,7 +228,7 @@ public class KaspaJobManager : JobManagerBase<KaspaJob>
                     customShareHasher = new CShake256(null, Encoding.UTF8.GetBytes(KaspaConstants.CoinbaseHeavyHash));
 
                 return new AstrixJob(customBlockHeaderHasher, customCoinbaseHasher, customShareHasher);
-            case "CYTX":
+            case "CPAY":
                 if(customBlockHeaderHasher is not Blake2b)
                     customBlockHeaderHasher = new Blake2b(Encoding.UTF8.GetBytes(KaspaConstants.CoinbaseBlockHash));
 

@@ -64,7 +64,7 @@ public static class PyrinConstants
 
 public static class CryptixConstants
 {   
-    public const ulong CryptixhashForkHeight = 0;
+    public const ulong Cryptix-OX8ForkHeight = 0;
 }
 
 public static class SpectreConstants

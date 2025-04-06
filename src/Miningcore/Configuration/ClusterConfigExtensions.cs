@@ -280,8 +280,8 @@ public partial class KaspaCoinTemplate
                 return "AstrixHash";
             case "KLS":
                 return "Karlsenhashv2";
-            case "CYTX":
-                return "Cryptixhash";           
+            case "CPAY":
+                return "Cryptix-OX8";           
             case "CSS":
             case "NTL":
             case "NXL":
