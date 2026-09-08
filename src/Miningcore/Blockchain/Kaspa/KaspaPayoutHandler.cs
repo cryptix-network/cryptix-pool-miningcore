@@ -278,14 +278,18 @@ public class KaspaPayoutHandler : PayoutHandlerBase,
                                         else if(mergeSetBluesHashes.Count > 0 && responseChildren.GetBlockResponse.Block.VerboseData.IsChainBlock)
                                         {
                                             var childrenPosition = responseChildren.GetBlockResponse.Block.VerboseData.MergeSetBluesHashes.IndexOf((string) block.Hash);
-                                            
+                                            var coinbase = childrenBlockRewardTransactions.First();
+                                            var rewardOutput = childrenPosition >= 0 && childrenPosition < coinbase.Outputs.Count
+                                                ? coinbase.Outputs[childrenPosition]
+                                                : null;
+
                                             // Are those rewards going to the pool wallet?
-                                            if(childrenBlockRewardTransactions.First().Outputs[childrenPosition].VerboseData.ScriptPublicKeyAddress == poolConfig.Address)
+                                            if(rewardOutput?.VerboseData?.ScriptPublicKeyAddress == poolConfig.Address)
                                             {
                                                 childrenProvideRewards = true;
 
-                                                logger.Debug(() => $"[{LogCategory}] Block {block.BlockHeight} - block child {responseChildren.GetBlockResponse.Block.Header.DaaScore} [{childrenHash}] provides {FormatAmount((decimal) (childrenBlockRewardTransactions.First().Outputs[childrenPosition].Amount / KaspaConstants.SmallestUnit))} => {coin.Symbol} address: {childrenBlockRewardTransactions.First().Outputs[childrenPosition].VerboseData.ScriptPublicKeyAddress} [{poolConfig.Address}]");
-                                                blockReward += (decimal) (childrenBlockRewardTransactions.First().Outputs[childrenPosition].Amount / KaspaConstants.SmallestUnit);
+                                                logger.Debug(() => $"[{LogCategory}] Block {block.BlockHeight} - block child {responseChildren.GetBlockResponse.Block.Header.DaaScore} [{childrenHash}] provides {FormatAmount((decimal) (rewardOutput.Amount / KaspaConstants.SmallestUnit))} => {coin.Symbol} address: {rewardOutput.VerboseData.ScriptPublicKeyAddress} [{poolConfig.Address}]");
+                                                blockReward += (decimal) (rewardOutput.Amount / KaspaConstants.SmallestUnit);
                                             }
                                             else
                                                 logger.Debug(() => $"[{LogCategory}] Block {block.BlockHeight} - block child {responseChildren.GetBlockResponse.Block.Header.DaaScore} [{childrenHash}] provides {FormatAmount(0.0m)}");
@@ -313,7 +317,7 @@ public class KaspaPayoutHandler : PayoutHandlerBase,
                                 {
                                     // We only need the transactions for the pool wallet
                                     var amounts = blockRewardTransactions.First().Outputs
-                                        .Where(x => x.VerboseData.ScriptPublicKeyAddress == poolConfig.Address)
+                                        .Where(x => x.VerboseData?.ScriptPublicKeyAddress == poolConfig.Address)
                                         .ToList();
 
                                     if(amounts.Count > 0)
